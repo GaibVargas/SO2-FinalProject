@@ -94,7 +94,7 @@ Thread::~Thread()
 void Thread::priority(const Criterion & c)
 {
     lock();
-
+    db<Thread>(ERR) << "Priority\n";
     db<Thread>(TRC) << "Thread::priority(this=" << this << ",prio=" << c << ")" << endl;
 
     if(_state != RUNNING) { // reorder the scheduling queue
@@ -244,7 +244,8 @@ void Thread::sleep(Queue * q)
     db<Thread>(TRC) << "Thread::sleep(running=" << running() << ",q=" << q << ")" << endl;
 
     assert(locked()); // locking handled by caller
-
+    // ANOTATION
+    // Quando uma thread saí da cpu é aqui que ela cai
     Thread * prev = running();
     _scheduler.suspend(prev);
     prev->_state = WAITING;
@@ -352,7 +353,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 int Thread::idle()
 {
     db<Thread>(TRC) << "Thread::idle(this=" << running() << ")" << endl;
-
+    
     while(_thread_count > 1) { // someone else besides idle
         if(Traits<Thread>::trace_idle)
             db<Thread>(TRC) << "Thread::idle(this=" << running() << ")" << endl;

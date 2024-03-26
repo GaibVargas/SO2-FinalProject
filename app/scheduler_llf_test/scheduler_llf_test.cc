@@ -5,10 +5,12 @@
 
 using namespace EPOS;
 
-const unsigned int iterations = 100;
+const unsigned int iterations = 2;
 const unsigned int period_a = 100; // ms
 const unsigned int period_b = 80; // ms
 const unsigned int period_c = 60; // ms
+// ANOTATION
+// wcet é o tempo de execução de uma thread
 const unsigned int wcet_a = 50; // ms
 const unsigned int wcet_b = 20; // ms
 const unsigned int wcet_c = 10; // ms
@@ -59,9 +61,9 @@ int main()
     cout << "Threads will now be created and I'll wait for them to finish..." << endl;
 
     // p,d,c,act,t
-    thread_a = new Periodic_Thread(RTConf(period_a * 1000, 0, 0, 0, iterations), &func_a);
-    thread_b = new Periodic_Thread(RTConf(period_b * 1000, 0, 0, 0, iterations), &func_b);
-    thread_c = new Periodic_Thread(RTConf(period_c * 1000, 0, 0, 0, iterations), &func_c);
+    thread_a = new Periodic_Thread(RTConf(period_a * 1000, 0, 0, 0, iterations, wcet_a * 1000), &func_a);
+    thread_b = new Periodic_Thread(RTConf(period_b * 1000, 0, 0, 0, iterations, wcet_b * 1000), &func_b);
+    thread_c = new Periodic_Thread(RTConf(period_c * 1000, 0, 0, 0, iterations, wcet_c * 1000), &func_c);
 
     exec('M');
 

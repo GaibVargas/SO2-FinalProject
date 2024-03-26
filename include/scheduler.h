@@ -65,6 +65,8 @@ public:
     // Runtime Statistics (for policies that don't use any; that's why its a union)
     union Statistics {
         // Thread Execution Time
+        // ANOTATION
+        // tempo de computação da thread talvez possa ser retirado daqui
         TSC::Time_Stamp thread_execution_time;  // accumulated thread execution time
         TSC::Time_Stamp last_thread_dispatch;   // time stamp of last dispatch
 
@@ -206,6 +208,24 @@ public:
     EDF(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY);
 
     void update();
+};
+
+// Least Laxity First
+class LLF: public Real_Time_Scheduler_Common
+{
+public:
+    static const bool timed = true;
+    static const bool dynamic = true;
+    static const bool preemptive = true;
+
+public:
+    LLF(int p = APERIODIC): Real_Time_Scheduler_Common(p), _expected_execution_time(0) {}
+    LLF(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY, const Microsecond & expected_execution_time = 0);
+
+    void update();
+
+public:
+    Microsecond _expected_execution_time;
 };
 
 __END_SYS

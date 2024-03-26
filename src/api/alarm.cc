@@ -120,6 +120,8 @@ void Alarm::handler(IC::Interrupt_Id i)
 
     if(alarm) {
         db<Alarm>(TRC) << "Alarm::handler(this=" << alarm << ",e=" << _elapsed << ",h=" << reinterpret_cast<void*>(alarm->handler) << ")" << endl;
+        // ANOTATION
+        // chama o handler do alarme sempre que o tempo de prioridade muda nas threads EDF
         (*alarm->_handler)();
     }
 }

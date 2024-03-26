@@ -49,6 +49,8 @@ protected:
         ~Dynamic_Handler() {}
 
         void operator()() {
+            // ANOTATION
+            // Quando alarm chama o handler, ele chama essa função
             _thread->criterion().update();
 
             Semaphore_Handler::operator()();
@@ -62,14 +64,15 @@ protected:
 
 public:
     struct Configuration: public Thread::Configuration {
-        Configuration(const Microsecond & p, const Microsecond & d = SAME, const Microsecond & cap = UNKNOWN, const Microsecond & act = NOW, const unsigned int n = INFINITE, const State & s = READY, const Criterion & c = NORMAL, unsigned int ss = STACK_SIZE)
-        : Thread::Configuration(s, c, ss), period(p), deadline(d == SAME ? p : d), capacity(cap), activation(act), times(n) {}
+        Configuration(const Microsecond & p, const Microsecond & d = SAME, const Microsecond & cap = UNKNOWN, const Microsecond & act = NOW, const unsigned int n = INFINITE, const Microsecond & eet = UNKNOWN, const State & s = READY, const Criterion & c = NORMAL, unsigned int ss = STACK_SIZE)
+        : Thread::Configuration(s, c, ss), period(p), deadline(d == SAME ? p : d), capacity(cap), activation(act), times(n), expected_execution_time(eet) {}
 
         Microsecond period;
         Microsecond deadline;
         Microsecond capacity;
         Microsecond activation;
         unsigned int times;
+        Microsecond expected_execution_time;
     };
 
 public:
@@ -80,7 +83,7 @@ public:
 
     template<typename ... Tn>
     Periodic_Thread(const Configuration & conf, int (* entry)(Tn ...), Tn ... an)
-    : Thread(Thread::Configuration(SUSPENDED, (conf.criterion != NORMAL) ? conf.criterion : Criterion(conf.period), conf.stack_size), entry, an ...),
+    : Thread(Thread::Configuration(SUSPENDED, (conf.criterion != NORMAL) ? conf.criterion : Criterion(conf.deadline, conf.period, conf.capacity, UNKNOWN, conf.expected_execution_time), conf.stack_size), entry, an ...),
       _semaphore(0), _handler(&_semaphore, this), _alarm(conf.period, &_handler, conf.times) {
         if((conf.state == READY) || (conf.state == RUNNING)) {
             _state = SUSPENDED;
