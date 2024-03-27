@@ -302,6 +302,9 @@ void Thread::reschedule()
         db<Thread>(TRC) << "Thread::reschedule()" << endl;
 
     assert(locked()); // locking handled by caller
+    for (auto item = _scheduler.begin(); item != _scheduler.end(); item++) {
+        item->object()->criterion().update_priority();
+    }
 
     Thread * prev = running();
     Thread * next = _scheduler.choose();

@@ -13,7 +13,7 @@ const unsigned int period_c = 60; // ms
 // wcet é o tempo de execução de uma thread
 const unsigned int wcet_a = 50; // ms
 const unsigned int wcet_b = 20; // ms
-const unsigned int wcet_c = 10; // ms
+const unsigned int wcet_c = 5; // ms
 
 int func_a();
 int func_b();

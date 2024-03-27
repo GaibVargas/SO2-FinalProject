@@ -219,13 +219,15 @@ public:
     static const bool preemptive = true;
 
 public:
-    LLF(int p = APERIODIC): Real_Time_Scheduler_Common(p), _expected_execution_time(0) {}
+    LLF(int p = APERIODIC): Real_Time_Scheduler_Common(p), _expected_execution_time(0), _absolute_deadline(0) {}
     LLF(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY, const Microsecond & expected_execution_time = 0);
 
     void update();
+    void update_priority();
 
 public:
     Microsecond _expected_execution_time;
+    Microsecond _absolute_deadline;
 };
 
 __END_SYS

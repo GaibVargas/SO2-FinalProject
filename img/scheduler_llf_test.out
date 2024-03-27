@@ -1,0 +1,249 @@
+
+
+
+
+This is EPOS!
+
+Setting up this machine as follows: 
+  Mode:         library
+  Processor:    1 x RV64 at 1000 MHz (BUS clock = 33 MHz)
+  Machine:      SiFive-U
+  Memory:       131072 KB [0x0000000080000000:0x0000000087ffffff]
+  User memory:  131047 KB [0x0000000080000000:0x0000000087ff9fff]
+  I/O space:    524288 KB [0x0000000000000000:0x000000001fffffff]
+  Node Id:      will get from the network!
+  Position:     will get from the network!
+
+Periodic Thread Component Test
+
+This test consists in creating three periodic threads as follows:
+- Every 100ms, thread A execs "a", waits for 50ms and then execs another "a";
+- Every 80ms, thread B execs "b", waits for 20ms and then execs another "b";
+- Every 60ms, thread C execs "c", waits for 5ms and then execs another "c";
+Threads will now be created and I'll wait for them to finish...
+Update Priority
+
+Expected execution Time: 50ms
+Update Priority
+
+Expected execution Time: 50ms
+Update Priority
+
+Expected execution Time: 20ms
+Update Priority
+
+Expected execution Time: 50ms
+Update Priority
+
+Expected execution Time: 5ms
+Update Priority
+
+Expected execution Time: 20ms
+
+0	M	[p(A)=49, p(B)=60, p(C)=55]
+0	A	[p(A)=49, p(B)=60, p(C)=55]
+0	a	[p(A)=49, p(B)=60, p(C)=55]
+0	a	[p(A)=49, p(B)=60, p(C)=55]
+1	a	[p(A)=49, p(B)=60, p(C)=55]
+2	a	[p(A)=49, p(B)=60, p(C)=55]
+3	a	[p(A)=49, p(B)=60, p(C)=55]
+4	a	[p(A)=49, p(B)=60, p(C)=55]
+5	a	[p(A)=49, p(B)=60, p(C)=55]
+6	a	[p(A)=49, p(B)=60, p(C)=55]
+7	a	[p(A)=49, p(B)=60, p(C)=55]
+8	a	[p(A)=49, p(B)=60, p(C)=55]
+9	a	[p(A)=49, p(B)=60, p(C)=55]
+10	a	[p(A)=49, p(B)=60, p(C)=55]
+11	a	[p(A)=49, p(B)=60, p(C)=55]Update Priority
+
+Expected execution Time: 5ms
+Update Priority
+
+Expected execution Time: 20ms
+
+11	C	[p(A)=49, p(B)=49, p(C)=44]
+11	c	[p(A)=49, p(B)=49, p(C)=44]
+11	c	[p(A)=49, p(B)=49, p(C)=44]
+12	c	[p(A)=49, p(B)=49, p(C)=44]
+13	c	[p(A)=49, p(B)=49, p(C)=44]
+14	c	[p(A)=49, p(B)=49, p(C)=44]
+15	c	[p(A)=49, p(B)=49, p(C)=44]
+16	B	[p(A)=49, p(B)=49, p(C)=44]
+16	b	[p(A)=49, p(B)=49, p(C)=44]
+16	b	[p(A)=49, p(B)=49, p(C)=44]
+17	b	[p(A)=49, p(B)=49, p(C)=44]
+18	b	[p(A)=49, p(B)=49, p(C)=44]
+19	b	[p(A)=49, p(B)=49, p(C)=44]
+20	b	[p(A)=49, p(B)=49, p(C)=44]
+21	b	[p(A)=49, p(B)=49, p(C)=44]
+22	b	[p(A)=49, p(B)=49, p(C)=44]
+23	b	[p(A)=49, p(B)=49, p(C)=44]
+24	b	[p(A)=49, p(B)=49, p(C)=44]
+25	b	[p(A)=49, p(B)=49, p(C)=44]Update Priority
+
+Expected execution Time: 50ms
+
+26	a	[p(A)=24, p(B)=49, p(C)=44]
+27	a	[p(A)=24, p(B)=49, p(C)=44]
+28	a	[p(A)=24, p(B)=49, p(C)=44]
+29	a	[p(A)=24, p(B)=49, p(C)=44]
+30	a	[p(A)=24, p(B)=49, p(C)=44]
+31	a	[p(A)=24, p(B)=49, p(C)=44]
+32	a	[p(A)=24, p(B)=49, p(C)=44]
+33	a	[p(A)=24, p(B)=49, p(C)=44]
+34	a	[p(A)=24, p(B)=49, p(C)=44]
+35	a	[p(A)=24, p(B)=49, p(C)=44]
+36	a	[p(A)=24, p(B)=49, p(C)=44]Update Priority
+
+Expected execution Time: 20ms
+
+37	a	[p(A)=24, p(B)=25, p(C)=44]
+38	a	[p(A)=24, p(B)=25, p(C)=44]
+39	a	[p(A)=24, p(B)=25, p(C)=44]
+40	a	[p(A)=24, p(B)=25, p(C)=44]
+41	a	[p(A)=24, p(B)=25, p(C)=44]
+42	a	[p(A)=24, p(B)=25, p(C)=44]
+43	a	[p(A)=24, p(B)=25, p(C)=44]
+44	a	[p(A)=24, p(B)=25, p(C)=44]
+45	a	[p(A)=24, p(B)=25, p(C)=44]
+46	a	[p(A)=24, p(B)=25, p(C)=44]Update Priority
+
+Expected execution Time: 20ms
+
+47	a	[p(A)=24, p(B)=15, p(C)=44]
+48	a	[p(A)=24, p(B)=15, p(C)=44]
+49	a	[p(A)=24, p(B)=15, p(C)=44]
+Expected exectuion Time: 5ms
+Deadline ABS: 122ms
+Update Priority
+
+Expected execution Time: 5ms
+
+63	c	[p(A)=24, p(B)=15, p(C)=55]
+63	c	[p(A)=24, p(B)=15, p(C)=55]
+64	c	[p(A)=24, p(B)=15, p(C)=55]
+65	c	[p(A)=24, p(B)=15, p(C)=55]
+66	c	[p(A)=24, p(B)=15, p(C)=55]
+67	c	[p(A)=24, p(B)=15, p(C)=55]
+Expected exectuion Time: 20ms
+Deadline ABS: 162ms
+Update Priority
+
+Expected execution Time: 20ms
+
+84	b	[p(A)=24, p(B)=60, p(C)=55]
+84	b	[p(A)=24, p(B)=60, p(C)=55]
+85	b	[p(A)=24, p(B)=60, p(C)=55]
+86	b	[p(A)=24, p(B)=60, p(C)=55]
+87	b	[p(A)=24, p(B)=60, p(C)=55]
+88	b	[p(A)=24, p(B)=60, p(C)=55]
+89	b	[p(A)=24, p(B)=60, p(C)=55]
+90	b	[p(A)=24, p(B)=60, p(C)=55]
+91	b	[p(A)=24, p(B)=60, p(C)=55]
+92	b	[p(A)=24, p(B)=60, p(C)=55]
+93	b	[p(A)=24, p(B)=60, p(C)=55]
+94	b	[p(A)=24, p(B)=60, p(C)=55]
+95	b	[p(A)=24, p(B)=60, p(C)=55]
+96	b	[p(A)=24, p(B)=60, p(C)=55]
+97	b	[p(A)=24, p(B)=60, p(C)=55]
+98	b	[p(A)=24, p(B)=60, p(C)=55]
+99	b	[p(A)=24, p(B)=60, p(C)=55]
+100	b	[p(A)=24, p(B)=60, p(C)=55]
+101	b	[p(A)=24, p(B)=60, p(C)=55]
+102	b	[p(A)=24, p(B)=60, p(C)=55]
+103	b	[p(A)=24, p(B)=60, p(C)=55]
+Expected exectuion Time: 50ms
+Deadline ABS: 201ms
+Update Priority
+
+Expected execution Time: 50ms
+
+104	a	[p(A)=50, p(B)=60, p(C)=55]
+104	a	[p(A)=50, p(B)=60, p(C)=55]
+105	a	[p(A)=50, p(B)=60, p(C)=55]
+106	a	[p(A)=50, p(B)=60, p(C)=55]
+107	a	[p(A)=50, p(B)=60, p(C)=55]
+108	a	[p(A)=50, p(B)=60, p(C)=55]
+109	a	[p(A)=50, p(B)=60, p(C)=55]
+110	a	[p(A)=50, p(B)=60, p(C)=55]
+111	a	[p(A)=50, p(B)=60, p(C)=55]
+112	a	[p(A)=50, p(B)=60, p(C)=55]
+113	a	[p(A)=50, p(B)=60, p(C)=55]
+114	a	[p(A)=50, p(B)=60, p(C)=55]
+115	a	[p(A)=50, p(B)=60, p(C)=55]
+116	a	[p(A)=50, p(B)=60, p(C)=55]
+117	a	[p(A)=50, p(B)=60, p(C)=55]
+118	a	[p(A)=50, p(B)=60, p(C)=55]
+119	a	[p(A)=50, p(B)=60, p(C)=55]
+120	a	[p(A)=50, p(B)=60, p(C)=55]
+121	a	[p(A)=50, p(B)=60, p(C)=55]
+122	a	[p(A)=50, p(B)=60, p(C)=55]
+123	a	[p(A)=50, p(B)=60, p(C)=55]
+124	a	[p(A)=50, p(B)=60, p(C)=55]
+125	a	[p(A)=50, p(B)=60, p(C)=55]
+126	a	[p(A)=50, p(B)=60, p(C)=55]
+Expected exectuion Time: 5ms
+Deadline ABS: 182ms
+Update Priority
+
+Expected execution Time: 5ms
+
+127	a	[p(A)=50, p(B)=60, p(C)=55]
+128	a	[p(A)=50, p(B)=60, p(C)=55]
+129	a	[p(A)=50, p(B)=60, p(C)=55]
+130	a	[p(A)=50, p(B)=60, p(C)=55]
+131	a	[p(A)=50, p(B)=60, p(C)=55]
+132	a	[p(A)=50, p(B)=60, p(C)=55]
+133	a	[p(A)=50, p(B)=60, p(C)=55]
+134	a	[p(A)=50, p(B)=60, p(C)=55]
+135	a	[p(A)=50, p(B)=60, p(C)=55]Update Priority
+
+Expected execution Time: 5ms
+
+135	C	[p(A)=50, p(B)=60, p(C)=46]
+136	a	[p(A)=50, p(B)=60, p(C)=46]
+137	a	[p(A)=50, p(B)=60, p(C)=46]
+138	a	[p(A)=50, p(B)=60, p(C)=46]
+139	a	[p(A)=50, p(B)=60, p(C)=46]
+140	a	[p(A)=50, p(B)=60, p(C)=46]
+141	a	[p(A)=50, p(B)=60, p(C)=46]
+142	a	[p(A)=50, p(B)=60, p(C)=46]
+143	a	[p(A)=50, p(B)=60, p(C)=46]
+144	a	[p(A)=50, p(B)=60, p(C)=46]
+145	a	[p(A)=50, p(B)=60, p(C)=46]
+146	a	[p(A)=50, p(B)=60, p(C)=46]
+147	a	[p(A)=50, p(B)=60, p(C)=46]
+148	a	[p(A)=50, p(B)=60, p(C)=46]
+149	a	[p(A)=50, p(B)=60, p(C)=46]
+150	a	[p(A)=50, p(B)=60, p(C)=46]
+151	a	[p(A)=50, p(B)=60, p(C)=46]
+152	a	[p(A)=50, p(B)=60, p(C)=46]
+153	a	[p(A)=50, p(B)=60, p(C)=46]
+Expected exectuion Time: 20ms
+Deadline ABS: 242ms
+Update Priority
+
+Expected execution Time: 20ms
+
+168	B	[p(A)=50, p(B)=60, p(C)=46]
+Expected exectuion Time: 50ms
+Deadline ABS: 301ms
+Update Priority
+
+Expected execution Time: 50ms
+
+211	A	[p(A)=50, p(B)=60, p(C)=46]
+211	M	[p(A)=50, p(B)=60, p(C)=46]
+... done!
+
+
+Thread A exited with status "A", thread B exited with status "B" and thread C ex
+ited with status "C.
+
+The estimated time to run the test was 200 ms. The measured time was 211 ms!
+I'm also done, bye!
+The last thread has exited!
+Rebooting the machine ...
+Machine::reboot()
+QEMU: Terminated
+

@@ -16,13 +16,25 @@ void EDF::update() {
         _priority = Alarm::elapsed() + _deadline;
 }
 
-LLF::LLF(const Microsecond & d, const Microsecond & p, const Microsecond & c, unsigned int, const Microsecond & expected_execution_time): Real_Time_Scheduler_Common(Alarm::ticks(d), Alarm::ticks(d), p, c), _expected_execution_time(Alarm::ticks(expected_execution_time)) {}
+LLF::LLF(const Microsecond & d, const Microsecond & p, const Microsecond & c, unsigned int, const Microsecond & expected_execution_time):
+    Real_Time_Scheduler_Common(Alarm::elapsed() + Alarm::ticks(d) - Alarm::ticks(expected_execution_time), Alarm::ticks(d), p, c),
+    _expected_execution_time(Alarm::ticks(expected_execution_time)),
+    _absolute_deadline(Alarm::elapsed() + Alarm::ticks(d)) {}
 
 void LLF::update() {
     db<LLF>(ERR) << "\nExpected exectuion Time: " << _expected_execution_time << "ms\n";
-    db<LLF>(ERR) << "Deadline: " << _deadline << "ms\n";
+    _absolute_deadline = Alarm::elapsed() + _deadline;
+    db<LLF>(ERR) << "Deadline ABS: " << _absolute_deadline << "ms\n";
     if((_priority >= PERIODIC) && (_priority < APERIODIC))
-        _priority = Alarm::elapsed() + _deadline;
+        _priority = _absolute_deadline - Alarm::elapsed() - _expected_execution_time;
+}
+
+void LLF::update_priority() {
+    if (_absolute_deadline <= 0) return;
+    db<LLF>(ERR) << "Update Priority\n";
+    db<LLF>(ERR) << "\nExpected execution Time: " << _expected_execution_time << "ms\n";
+    if((_priority >= PERIODIC) && (_priority < APERIODIC))
+        _priority = _absolute_deadline - Alarm::elapsed() - _expected_execution_time;
 }
 
 // Since the definition of FCFS above is only known to this unit, forcing its instantiation here so it gets emitted in scheduler.o for subsequent linking with other units is necessary.
