@@ -228,6 +228,8 @@ public:
 public:
     Microsecond _expected_execution_time;
     Microsecond _absolute_deadline;
+    Microsecond _total_execution_time = 0;
+    Microsecond _last_started_time = 0;
 };
 
 __END_SYS

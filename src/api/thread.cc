@@ -3,6 +3,7 @@
 #include <machine.h>
 #include <system.h>
 #include <process.h>
+#include <time.h>
 
 __BEGIN_SYS
 
@@ -204,6 +205,7 @@ void Thread::yield()
     db<Thread>(TRC) << "Thread::yield(running=" << running() << ")" << endl;
 
     Thread * prev = running();
+    update_priorities();
     Thread * next = _scheduler.choose_another();
 
     dispatch(prev, next);
@@ -231,9 +233,7 @@ void Thread::exit(int status)
         prev->_joining = 0;
     }
 
-    Thread * next = _scheduler.choose(); // at least idle will always be there
-
-    dispatch(prev, next);
+    reschedule();
 
     unlock();
 }
@@ -296,20 +296,26 @@ void Thread::wakeup_all(Queue * q)
 }
 
 
-void Thread::reschedule()
+void Thread::reschedule(bool charge)
 {
     if(!Criterion::timed || Traits<Thread>::hysterically_debugged)
         db<Thread>(TRC) << "Thread::reschedule()" << endl;
 
     assert(locked()); // locking handled by caller
-    for (auto item = _scheduler.begin(); item != _scheduler.end(); item++) {
-        item->object()->criterion().update_priority();
-    }
+    update_priorities();
 
     Thread * prev = running();
     Thread * next = _scheduler.choose();
 
-    dispatch(prev, next);
+    dispatch(prev, next, charge);
+}
+
+void Thread::update_priorities() 
+{
+    assert(locked());
+    for (auto item = _scheduler.begin(); item != _scheduler.end(); item++) {
+        item->object()->criterion().update_priority();
+    }
 }
 
 
@@ -334,6 +340,9 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         if(prev->_state == RUNNING)
             prev->_state = READY;
         next->_state = RUNNING;
+        
+        next->criterion()._last_started_time = Alarm::elapsed();
+        prev->criterion()._total_execution_time = prev->criterion()._total_execution_time + Alarm::elapsed() - prev->criterion()._last_started_time;
 
         db<Thread>(TRC) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;
         if(Traits<Thread>::debugged && Traits<Debug>::info) {

@@ -24,6 +24,8 @@ LLF::LLF(const Microsecond & d, const Microsecond & p, const Microsecond & c, un
 void LLF::update() {
     db<LLF>(ERR) << "\nExpected exectuion Time: " << _expected_execution_time << "ms\n";
     _absolute_deadline = Alarm::elapsed() + _deadline;
+    _total_execution_time = 0;
+    _last_started_time = 0;
     db<LLF>(ERR) << "Deadline ABS: " << _absolute_deadline << "ms\n";
     if((_priority >= PERIODIC) && (_priority < APERIODIC))
         _priority = _absolute_deadline - Alarm::elapsed() - _expected_execution_time;
@@ -31,10 +33,10 @@ void LLF::update() {
 
 void LLF::update_priority() {
     if (_absolute_deadline <= 0) return;
-    db<LLF>(ERR) << "Update Priority\n";
+    db<LLF>(ERR) << "deadline " << _deadline << "tempo " << _total_execution_time << "\n";
     db<LLF>(ERR) << "\nExpected execution Time: " << _expected_execution_time << "ms\n";
     if((_priority >= PERIODIC) && (_priority < APERIODIC))
-        _priority = _absolute_deadline - Alarm::elapsed() - _expected_execution_time;
+        _priority = _absolute_deadline - Alarm::elapsed() - (_expected_execution_time - _total_execution_time);
 }
 
 // Since the definition of FCFS above is only known to this unit, forcing its instantiation here so it gets emitted in scheduler.o for subsequent linking with other units is necessary.
