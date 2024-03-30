@@ -98,7 +98,7 @@ public:
     static volatile bool wait_next() {
         Periodic_Thread * t = reinterpret_cast<Periodic_Thread *>(running());
 
-        db<Thread>(TRC) << "Thread::wait_next(this=" << t << ",times=" << t->_alarm.times() << ")" << endl;
+        // db<Thread>(TRC) << "Thread::wait_next(this=" << t << ",times=" << t->_alarm.times() << ")" << endl;
 
         if(t->_alarm.times())
             t->_semaphore.p();

@@ -205,7 +205,7 @@ void Thread::yield()
     db<Thread>(TRC) << "Thread::yield(running=" << running() << ")" << endl;
 
     Thread * prev = running();
-    update_priorities();
+    // update_priorities();
     Thread * next = _scheduler.choose_another();
 
     dispatch(prev, next);
@@ -216,6 +216,7 @@ void Thread::yield()
 
 void Thread::exit(int status)
 {
+    db<Thread>(ERR) << "exit\n";
     lock();
 
     db<Thread>(TRC) << "Thread::exit(status=" << status << ") [running=" << running() << "]" << endl;
@@ -233,7 +234,10 @@ void Thread::exit(int status)
         prev->_joining = 0;
     }
 
-    reschedule();
+    update_priorities();
+    Thread * next = _scheduler.choose(); // at least idle will always be there
+
+    dispatch(prev, next);
 
     unlock();
 }
@@ -344,13 +348,13 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         next->criterion()._last_started_time = Alarm::elapsed();
         prev->criterion()._total_execution_time = prev->criterion()._total_execution_time + Alarm::elapsed() - prev->criterion()._last_started_time;
 
-        db<Thread>(TRC) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;
+        // db<Thread>(TRC) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;
         if(Traits<Thread>::debugged && Traits<Debug>::info) {
             CPU::Context tmp;
             tmp.save();
             db<Thread>(INF) << "Thread::dispatch:prev={" << prev << ",ctx=" << tmp << "}" << endl;
         }
-        db<Thread>(INF) << "Thread::dispatch:next={" << next << ",ctx=" << *next->_context << "}" << endl;
+        // db<Thread>(INF) << "Thread::dispatch:next={" << next << ",ctx=" << *next->_context << "}" << endl;
 
         // The non-volatile pointer to volatile pointer to a non-volatile context is correct
         // and necessary because of context switches, but here, we are locked() and

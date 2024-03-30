@@ -30,6 +30,8 @@ inline void exec(char c, unsigned int time = 0) // in miliseconds
 {
     // Delay was not used here to prevent scheduling interference due to blocking
     Microsecond elapsed = chrono.read() / 1000;
+    Microsecond counter = 0;
+    
 
     cout << "\n" << elapsed << "\t" << c
          << "\t[p(A)=" << thread_a->priority()
@@ -37,13 +39,14 @@ inline void exec(char c, unsigned int time = 0) // in miliseconds
          << ", p(C)=" << thread_c->priority() << "]";
 
     if(time) {
-        for(Microsecond end = elapsed + time, last = end; end > elapsed; elapsed = chrono.read() / 1000)
+        for(Microsecond end = time, last = elapsed; end > counter; elapsed = chrono.read() / 1000)
             if(last != elapsed) {
                 cout << "\n" << elapsed << "\t" << c
                     << "\t[p(A)=" << thread_a->priority()
                     << ", p(B)=" << thread_b->priority()
                     << ", p(C)=" << thread_c->priority() << "]";
                 last = elapsed;
+                counter = counter + 1;
             }
     }
 }
