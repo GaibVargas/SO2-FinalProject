@@ -216,7 +216,6 @@ void Thread::yield()
 
 void Thread::exit(int status)
 {
-    db<Thread>(ERR) << "exit\n";
     lock();
 
     db<Thread>(TRC) << "Thread::exit(status=" << status << ") [running=" << running() << "]" << endl;
@@ -246,7 +245,6 @@ void Thread::exit(int status)
 void Thread::sleep(Queue * q)
 {
     db<Thread>(TRC) << "Thread::sleep(running=" << running() << ",q=" << q << ")" << endl;
-
     assert(locked()); // locking handled by caller
     // ANOTATION
     // Quando uma thread saí da cpu é aqui que ela cai
@@ -256,6 +254,7 @@ void Thread::sleep(Queue * q)
     prev->_waiting = q;
     q->insert(&prev->_link);
 
+    update_priorities();
     Thread * next = _scheduler.chosen();
 
     dispatch(prev, next);
@@ -274,7 +273,7 @@ void Thread::wakeup(Queue * q)
         t->_waiting = 0;
         _scheduler.resume(t);
 
-        if(preemptive)
+        if(preemptive) 
             reschedule();
     }
 }
@@ -312,6 +311,13 @@ void Thread::reschedule(bool charge)
     Thread * next = _scheduler.choose();
 
     dispatch(prev, next, charge);
+    // ANNOTATION: PErguntar pro Vargas como podemos fazer isso.  
+    // if (prev->criterion()._priority > next->criterion()._priority) {
+    //     dispatch(prev, next, charge);
+    // } else {
+    //     assert(unlock);
+    // }
+
 }
 
 void Thread::update_priorities() 
