@@ -46,9 +46,12 @@ inline void exec(char c, unsigned int time = 0) // in miliseconds
                     << ", p(B)=" << thread_b->priority()
                     << ", p(C)=" << thread_c->priority() << "]";
                 last = elapsed;
+                // ANNOTATOION: ainda não faz uso de todo o tempo que é dado
+                // somar de um em um é o mesmo que assumir que o for é executado time vezes
                 counter = counter + 1;
             }
     }
+    db<Thread>(ERR) << c << " Terminei loop\n";
 }
 
 
@@ -85,7 +88,7 @@ int main()
          << "\", thread B exited with status \"" << char(status_b)
          << "\" and thread C exited with status \"" << char(status_c) << "." << endl;
 
-    cout << "\nThe estimated time to run the test was "
+    cout << "\nThe estimated time to run the  est was "
          << max(period_a, period_b, period_c) * iterations
          << " ms. The measured time was " << chrono.read() / 1000 <<" ms!" << endl;
 

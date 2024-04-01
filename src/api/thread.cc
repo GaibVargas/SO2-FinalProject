@@ -248,13 +248,13 @@ void Thread::sleep(Queue * q)
     assert(locked()); // locking handled by caller
     // ANOTATION
     // Quando uma thread saí da cpu é aqui que ela cai
+    update_priorities();
     Thread * prev = running();
     _scheduler.suspend(prev);
     prev->_state = WAITING;
     prev->_waiting = q;
     q->insert(&prev->_link);
 
-    update_priorities();
     Thread * next = _scheduler.chosen();
 
     dispatch(prev, next);
@@ -309,8 +309,12 @@ void Thread::reschedule(bool charge)
 
     Thread * prev = running();
     Thread * next = _scheduler.choose();
+    if (prev->priority() > next->priority()) {
+        dispatch(prev, next, charge);
+    } else {
+        _scheduler.choose(prev);
+    }
 
-    dispatch(prev, next, charge);
     // ANNOTATION: PErguntar pro Vargas como podemos fazer isso.  
     // if (prev->criterion()._priority > next->criterion()._priority) {
     //     dispatch(prev, next, charge);
@@ -324,7 +328,9 @@ void Thread::update_priorities()
 {
     assert(locked());
     for (auto item = _scheduler.begin(); item != _scheduler.end(); item++) {
-        item->object()->criterion().update_priority();
+        auto t = item->object();
+        if (t->_link.rank() == IDLE) continue;
+        t->criterion().update_priority();
     }
 }
 
