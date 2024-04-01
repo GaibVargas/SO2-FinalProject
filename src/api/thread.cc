@@ -129,6 +129,7 @@ int Thread::join()
 
         _joining = prev;
         prev->_state = SUSPENDED;
+        update_priorities();
         _scheduler.suspend(prev); // implicitly choose() if suspending chosen()
 
         Thread * next = _scheduler.chosen();
@@ -169,6 +170,7 @@ void Thread::suspend()
     Thread * prev = running();
 
     _state = SUSPENDED;
+    update_priorities();
     _scheduler.suspend(this);
 
     Thread * next = _scheduler.chosen();
