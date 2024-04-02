@@ -9,8 +9,7 @@ const unsigned int iterations = 2;
 const unsigned int period_a = 100; // ms
 const unsigned int period_b = 80; // ms
 const unsigned int period_c = 60; // ms
-// ANOTATION
-// wcet é o tempo de execução de uma thread
+
 const unsigned int wcet_a = 50; // ms
 const unsigned int wcet_b = 20; // ms
 const unsigned int wcet_c = 5; // ms
@@ -51,7 +50,8 @@ inline void exec(char c, unsigned int time = 0) // in miliseconds
                 counter = counter + 1;
             }
     }
-    db<Thread>(ERR) << c << " Terminei loop\n";
+
+    cout << "\n" << c << " Terminei execução" << endl;
 }
 
 

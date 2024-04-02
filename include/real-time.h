@@ -49,8 +49,6 @@ protected:
         ~Dynamic_Handler() {}
 
         void operator()() {
-            // ANOTATION
-            // Quando alarm chama o handler, ele chama essa função
             _thread->criterion().update();
 
             Semaphore_Handler::operator()();

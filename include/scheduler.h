@@ -65,8 +65,6 @@ public:
     // Runtime Statistics (for policies that don't use any; that's why its a union)
     union Statistics {
         // Thread Execution Time
-        // ANOTATION
-        // tempo de computação da thread talvez possa ser retirado daqui
         TSC::Time_Stamp thread_execution_time;  // accumulated thread execution time
         TSC::Time_Stamp last_thread_dispatch;   // time stamp of last dispatch
 
@@ -225,7 +223,13 @@ public:
     void update();
     void update_priority();
 
-public:
+    Microsecond last_started_time() { return _last_started_time; }
+    Microsecond total_execution_time() { return _total_execution_time; }
+
+    void set_last_started_time(Microsecond time) { _last_started_time = time; }
+    void set_total_execution_time(Microsecond time) { _total_execution_time = time; }
+
+private:
     Microsecond _expected_execution_time;
     Microsecond _absolute_deadline;
     Microsecond _total_execution_time = 0;

@@ -95,7 +95,6 @@ Thread::~Thread()
 void Thread::priority(const Criterion & c)
 {
     lock();
-    db<Thread>(ERR) << "Priority\n";
     db<Thread>(TRC) << "Thread::priority(this=" << this << ",prio=" << c << ")" << endl;
 
     if(_state != RUNNING) { // reorder the scheduling queue
@@ -129,7 +128,6 @@ int Thread::join()
 
         _joining = prev;
         prev->_state = SUSPENDED;
-        update_priorities();
         _scheduler.suspend(prev); // implicitly choose() if suspending chosen()
 
         Thread * next = _scheduler.chosen();
@@ -170,7 +168,6 @@ void Thread::suspend()
     Thread * prev = running();
 
     _state = SUSPENDED;
-    update_priorities();
     _scheduler.suspend(this);
 
     Thread * next = _scheduler.chosen();
@@ -207,7 +204,6 @@ void Thread::yield()
     db<Thread>(TRC) << "Thread::yield(running=" << running() << ")" << endl;
 
     Thread * prev = running();
-    // update_priorities();
     Thread * next = _scheduler.choose_another();
 
     dispatch(prev, next);
@@ -235,7 +231,6 @@ void Thread::exit(int status)
         prev->_joining = 0;
     }
 
-    update_priorities();
     Thread * next = _scheduler.choose(); // at least idle will always be there
 
     dispatch(prev, next);
@@ -248,9 +243,7 @@ void Thread::sleep(Queue * q)
 {
     db<Thread>(TRC) << "Thread::sleep(running=" << running() << ",q=" << q << ")" << endl;
     assert(locked()); // locking handled by caller
-    // ANOTATION
-    // Quando uma thread saí da cpu é aqui que ela cai
-    update_priorities();
+
     Thread * prev = running();
     _scheduler.suspend(prev);
     prev->_state = WAITING;
@@ -307,7 +300,6 @@ void Thread::reschedule(bool charge)
         db<Thread>(TRC) << "Thread::reschedule()" << endl;
 
     assert(locked()); // locking handled by caller
-    update_priorities();
 
     Thread * prev = running();
     Thread * next = _scheduler.choose();
@@ -317,21 +309,17 @@ void Thread::reschedule(bool charge)
         _scheduler.choose(prev);
     }
 
-    // ANNOTATION: PErguntar pro Vargas como podemos fazer isso.  
-    // if (prev->criterion()._priority > next->criterion()._priority) {
-    //     dispatch(prev, next, charge);
-    // } else {
-    //     assert(unlock);
-    // }
-
 }
 
 void Thread::update_priorities() 
 {
+    db<Thread>(TRC) << "Thread::update_priorities()" << endl;
+
     assert(locked());
+
     for (auto item = _scheduler.begin(); item != _scheduler.end(); item++) {
         auto t = item->object();
-        if (t->_link.rank() == IDLE) continue;
+        if (t->_link.rank() == IDLE || t->_link.rank() == MAIN) continue;
         t->criterion().update_priority();
     }
 }
@@ -340,6 +328,7 @@ void Thread::update_priorities()
 void Thread::time_slicer(IC::Interrupt_Id i)
 {
     lock();
+    update_priorities();
     reschedule();
     unlock();
 }
@@ -359,8 +348,10 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
             prev->_state = READY;
         next->_state = RUNNING;
         
-        next->criterion()._last_started_time = Alarm::elapsed();
-        prev->criterion()._total_execution_time = prev->criterion()._total_execution_time + Alarm::elapsed() - prev->criterion()._last_started_time;
+        next->criterion().set_last_started_time(Alarm::elapsed());
+        prev->criterion().set_total_execution_time(
+            prev->criterion().total_execution_time() + Alarm::elapsed() - prev->criterion().last_started_time()
+        );
 
         // db<Thread>(TRC) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;
         if(Traits<Thread>::debugged && Traits<Debug>::info) {

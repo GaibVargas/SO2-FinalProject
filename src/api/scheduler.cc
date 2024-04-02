@@ -22,21 +22,19 @@ LLF::LLF(const Microsecond & d, const Microsecond & p, const Microsecond & c, un
     _absolute_deadline(Alarm::elapsed() + Alarm::ticks(d)) {}
 
 void LLF::update() {
-    // db<LLF>(ERR) << "\nExpected exectuion Time: " << _expected_execution_time << "ms\n";
     _absolute_deadline = Alarm::elapsed() + _deadline;
     _total_execution_time = 0;
     _last_started_time = 0;
-    // db<LLF>(ERR) << "Deadline ABS: " << _absolute_deadline << "ms\n";
     if((_priority >= PERIODIC) && (_priority < APERIODIC))
-        _priority = _absolute_deadline - Alarm::elapsed() - _expected_execution_time;
+        _priority = _deadline - _expected_execution_time;
 }
 
 void LLF::update_priority() {
-    if (_priority == IDLE) return;
-    // db<LLF>(ERR) << "deadline " << _deadline << "tempo " << _total_execution_time << "\n";
-    // db<LLF>(ERR) << "\nExpected execution Time: " << _expected_execution_time << "ms\n";
     if((_priority >= PERIODIC) && (_priority < APERIODIC)) {
         _priority = _absolute_deadline - Alarm::elapsed() - (_expected_execution_time - _total_execution_time);
+        if (_priority <= 0) {
+            _priority = 0;
+        }
     }
 }
 
