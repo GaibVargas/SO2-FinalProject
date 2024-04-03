@@ -3,6 +3,7 @@
 #include <machine.h>
 #include <system.h>
 #include <process.h>
+#include <time.h>
 
 __BEGIN_SYS
 
@@ -94,7 +95,6 @@ Thread::~Thread()
 void Thread::priority(const Criterion & c)
 {
     lock();
-    db<Thread>(ERR) << "Priority\n";
     db<Thread>(TRC) << "Thread::priority(this=" << this << ",prio=" << c << ")" << endl;
 
     if(_state != RUNNING) { // reorder the scheduling queue
@@ -124,6 +124,7 @@ int Thread::join()
     assert(!_joining);
 
     if(_state != FINISHING) {
+        update_priorities();
         Thread * prev = running();
 
         _joining = prev;
@@ -165,6 +166,7 @@ void Thread::suspend()
 
     db<Thread>(TRC) << "Thread::suspend(this=" << this << ")" << endl;
 
+    update_priorities();
     Thread * prev = running();
 
     _state = SUSPENDED;
@@ -217,6 +219,7 @@ void Thread::exit(int status)
     lock();
 
     db<Thread>(TRC) << "Thread::exit(status=" << status << ") [running=" << running() << "]" << endl;
+    update_priorities();
 
     Thread * prev = running();
     _scheduler.remove(prev);
@@ -242,10 +245,9 @@ void Thread::exit(int status)
 void Thread::sleep(Queue * q)
 {
     db<Thread>(TRC) << "Thread::sleep(running=" << running() << ",q=" << q << ")" << endl;
-
     assert(locked()); // locking handled by caller
-    // ANOTATION
-    // Quando uma thread saí da cpu é aqui que ela cai
+
+    update_priorities();
     Thread * prev = running();
     _scheduler.suspend(prev);
     prev->_state = WAITING;
@@ -270,7 +272,7 @@ void Thread::wakeup(Queue * q)
         t->_waiting = 0;
         _scheduler.resume(t);
 
-        if(preemptive)
+        if(preemptive) 
             reschedule();
     }
 }
@@ -296,17 +298,35 @@ void Thread::wakeup_all(Queue * q)
 }
 
 
-void Thread::reschedule()
+void Thread::reschedule(bool charge)
 {
     if(!Criterion::timed || Traits<Thread>::hysterically_debugged)
         db<Thread>(TRC) << "Thread::reschedule()" << endl;
 
     assert(locked()); // locking handled by caller
 
+    update_priorities();
     Thread * prev = running();
     Thread * next = _scheduler.choose();
+    if (prev->priority() > next->priority()) {
+        dispatch(prev, next, charge);
+    } else {
+        _scheduler.choose(prev);
+    }
 
-    dispatch(prev, next);
+}
+
+void Thread::update_priorities() 
+{
+    db<Thread>(TRC) << "Thread::update_priorities()" << endl;
+
+    assert(locked());
+
+    for (auto item = _scheduler.begin(); item != _scheduler.end(); item++) {
+        auto t = item->object();
+        if (t->_link.rank() == IDLE || t->_link.rank() == MAIN) continue;
+        t->criterion().update_priority();
+    }
 }
 
 
@@ -331,14 +351,19 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         if(prev->_state == RUNNING)
             prev->_state = READY;
         next->_state = RUNNING;
+        
+        next->criterion().set_last_started_time(Alarm::elapsed());
+        prev->criterion().set_total_execution_time(
+            prev->criterion().total_execution_time() + Alarm::elapsed() - prev->criterion().last_started_time()
+        );
 
-        db<Thread>(TRC) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;
+        // db<Thread>(TRC) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;
         if(Traits<Thread>::debugged && Traits<Debug>::info) {
             CPU::Context tmp;
             tmp.save();
             db<Thread>(INF) << "Thread::dispatch:prev={" << prev << ",ctx=" << tmp << "}" << endl;
         }
-        db<Thread>(INF) << "Thread::dispatch:next={" << next << ",ctx=" << *next->_context << "}" << endl;
+        // db<Thread>(INF) << "Thread::dispatch:next={" << next << ",ctx=" << *next->_context << "}" << endl;
 
         // The non-volatile pointer to volatile pointer to a non-volatile context is correct
         // and necessary because of context switches, but here, we are locked() and

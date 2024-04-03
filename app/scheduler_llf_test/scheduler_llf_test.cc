@@ -5,15 +5,14 @@
 
 using namespace EPOS;
 
-const unsigned int iterations = 2;
-const unsigned int period_a = 100; // ms
+const unsigned int iterations = 3;
+const unsigned int period_a = 60; // ms
 const unsigned int period_b = 80; // ms
-const unsigned int period_c = 60; // ms
-// ANOTATION
-// wcet é o tempo de execução de uma thread
-const unsigned int wcet_a = 50; // ms
+const unsigned int period_c = 100; // ms
+
+const unsigned int wcet_a = 20; // ms
 const unsigned int wcet_b = 20; // ms
-const unsigned int wcet_c = 10; // ms
+const unsigned int wcet_c = 30; // ms
 
 int func_a();
 int func_b();
@@ -30,6 +29,8 @@ inline void exec(char c, unsigned int time = 0) // in miliseconds
 {
     // Delay was not used here to prevent scheduling interference due to blocking
     Microsecond elapsed = chrono.read() / 1000;
+    Microsecond counter = 0;
+    
 
     cout << "\n" << elapsed << "\t" << c
          << "\t[p(A)=" << thread_a->priority()
@@ -37,15 +38,20 @@ inline void exec(char c, unsigned int time = 0) // in miliseconds
          << ", p(C)=" << thread_c->priority() << "]";
 
     if(time) {
-        for(Microsecond end = elapsed + time, last = end; end > elapsed; elapsed = chrono.read() / 1000)
+        for(Microsecond end = time, last = elapsed; end > counter; elapsed = chrono.read() / 1000)
             if(last != elapsed) {
                 cout << "\n" << elapsed << "\t" << c
                     << "\t[p(A)=" << thread_a->priority()
                     << ", p(B)=" << thread_b->priority()
                     << ", p(C)=" << thread_c->priority() << "]";
                 last = elapsed;
+                // ANNOTATOION: ainda não faz uso de todo o tempo que é dado
+                // somar de um em um é o mesmo que assumir que o for é executado time vezes
+                counter = counter + 1;
             }
     }
+
+    cout << "\n" << c << " Terminei execução" << endl;
 }
 
 
@@ -82,7 +88,7 @@ int main()
          << "\", thread B exited with status \"" << char(status_b)
          << "\" and thread C exited with status \"" << char(status_c) << "." << endl;
 
-    cout << "\nThe estimated time to run the test was "
+    cout << "\nThe estimated time to run the  est was "
          << max(period_a, period_b, period_c) * iterations
          << " ms. The measured time was " << chrono.read() / 1000 <<" ms!" << endl;
 
