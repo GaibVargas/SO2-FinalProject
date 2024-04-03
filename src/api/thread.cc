@@ -124,6 +124,7 @@ int Thread::join()
     assert(!_joining);
 
     if(_state != FINISHING) {
+        update_priorities();
         Thread * prev = running();
 
         _joining = prev;
@@ -165,6 +166,7 @@ void Thread::suspend()
 
     db<Thread>(TRC) << "Thread::suspend(this=" << this << ")" << endl;
 
+    update_priorities();
     Thread * prev = running();
 
     _state = SUSPENDED;
@@ -217,6 +219,7 @@ void Thread::exit(int status)
     lock();
 
     db<Thread>(TRC) << "Thread::exit(status=" << status << ") [running=" << running() << "]" << endl;
+    update_priorities();
 
     Thread * prev = running();
     _scheduler.remove(prev);
@@ -244,6 +247,7 @@ void Thread::sleep(Queue * q)
     db<Thread>(TRC) << "Thread::sleep(running=" << running() << ",q=" << q << ")" << endl;
     assert(locked()); // locking handled by caller
 
+    update_priorities();
     Thread * prev = running();
     _scheduler.suspend(prev);
     prev->_state = WAITING;
@@ -301,6 +305,7 @@ void Thread::reschedule(bool charge)
 
     assert(locked()); // locking handled by caller
 
+    update_priorities();
     Thread * prev = running();
     Thread * next = _scheduler.choose();
     if (prev->priority() > next->priority()) {
@@ -328,7 +333,6 @@ void Thread::update_priorities()
 void Thread::time_slicer(IC::Interrupt_Id i)
 {
     lock();
-    update_priorities();
     reschedule();
     unlock();
 }

@@ -5,14 +5,14 @@
 
 using namespace EPOS;
 
-const unsigned int iterations = 2;
-const unsigned int period_a = 100; // ms
+const unsigned int iterations = 3;
+const unsigned int period_a = 60; // ms
 const unsigned int period_b = 80; // ms
-const unsigned int period_c = 60; // ms
+const unsigned int period_c = 100; // ms
 
-const unsigned int wcet_a = 50; // ms
+const unsigned int wcet_a = 20; // ms
 const unsigned int wcet_b = 20; // ms
-const unsigned int wcet_c = 5; // ms
+const unsigned int wcet_c = 30; // ms
 
 int func_a();
 int func_b();
