@@ -151,18 +151,30 @@ public:
 class Real_Time_Scheduler_Common: public Priority
 {
 protected:
-    Real_Time_Scheduler_Common(int p): Priority(p), _deadline(0), _period(0), _capacity(0) {} // aperiodic
-    Real_Time_Scheduler_Common(int i, const Microsecond & d, const Microsecond & p, const Microsecond & c)
-    : Priority(i), _deadline(d), _period(p), _capacity(c) {}
+    Real_Time_Scheduler_Common(int p): Priority(p), _deadline(0), _period(0), _capacity(0), _expected_execution_time(0), _absolute_deadline(0) {} // aperiodic
+    Real_Time_Scheduler_Common(int i, const Microsecond & d, const Microsecond & p, const Microsecond & c, const Microsecond & e = 0);
 
 public:
     const Microsecond period() { return _period; }
     void period(const Microsecond & p) { _period = p; }
 
+    void update_priority() {};
+
+    Microsecond last_started_time() { return _last_started_time; }
+    Microsecond total_execution_time() { return _total_execution_time; }
+
+    void set_last_started_time(Microsecond time) { _last_started_time = time; }
+    void set_total_execution_time(Microsecond time) { _total_execution_time = time; }
+
 public:
     Microsecond _deadline;
     Microsecond _period;
     Microsecond _capacity;
+
+    Microsecond _expected_execution_time;
+    Microsecond _absolute_deadline;
+    Microsecond _total_execution_time = 0;
+    Microsecond _last_started_time = 0;
 };
 
 // Rate Monotonic
@@ -217,23 +229,11 @@ public:
     static const bool preemptive = true;
 
 public:
-    LLF(int p = APERIODIC): Real_Time_Scheduler_Common(p), _expected_execution_time(0), _absolute_deadline(0) {}
+    LLF(int p = APERIODIC): Real_Time_Scheduler_Common(p) {}
     LLF(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY, const Microsecond & expected_execution_time = 0);
 
     void update();
     void update_priority();
-
-    Microsecond last_started_time() { return _last_started_time; }
-    Microsecond total_execution_time() { return _total_execution_time; }
-
-    void set_last_started_time(Microsecond time) { _last_started_time = time; }
-    void set_total_execution_time(Microsecond time) { _total_execution_time = time; }
-
-private:
-    Microsecond _expected_execution_time;
-    Microsecond _absolute_deadline;
-    Microsecond _total_execution_time = 0;
-    Microsecond _last_started_time = 0;
 };
 
 __END_SYS

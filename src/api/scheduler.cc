@@ -5,6 +5,11 @@
 
 __BEGIN_SYS
 
+Real_Time_Scheduler_Common::Real_Time_Scheduler_Common(int i, const Microsecond & d, const Microsecond & p, const Microsecond & c, const Microsecond & e):
+    Priority(i), _deadline(d), _period(p), _capacity(c), _expected_execution_time(e) {
+        _absolute_deadline = Alarm::elapsed() + _deadline;
+    }
+
 // The following Scheduling Criteria depend on Alarm, which is not available at scheduler.h
 template <typename ... Tn>
 FCFS::FCFS(int p, Tn & ... an): Priority((p == IDLE) ? IDLE : Alarm::elapsed()) {}
@@ -17,9 +22,7 @@ void EDF::update() {
 }
 
 LLF::LLF(const Microsecond & d, const Microsecond & p, const Microsecond & c, unsigned int, const Microsecond & expected_execution_time):
-    Real_Time_Scheduler_Common(Alarm::elapsed() + Alarm::ticks(d) - Alarm::ticks(expected_execution_time), Alarm::ticks(d), p, c),
-    _expected_execution_time(Alarm::ticks(expected_execution_time)),
-    _absolute_deadline(Alarm::elapsed() + Alarm::ticks(d)) {}
+    Real_Time_Scheduler_Common(Alarm::elapsed() + Alarm::ticks(d) - Alarm::ticks(expected_execution_time), Alarm::ticks(d), p, c, Alarm::ticks(expected_execution_time)) {}
 
 void LLF::update() {
     _absolute_deadline = Alarm::elapsed() + _deadline;

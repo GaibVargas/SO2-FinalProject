@@ -34,6 +34,7 @@ class Alarm
     friend class Alarm_Chronometer;             // for elapsed()
     friend class Thread;
     friend class Periodic_Thread;               // for ticks(), times(), and elapsed()
+    friend class Real_Time_Scheduler_Common;    // for elapsed()
     friend class FCFS;                          // for ticks() and elapsed()
     friend class EDF;                           // for ticks() and elapsed()
     friend class LLF;                           // for ticks() and elapsed()
