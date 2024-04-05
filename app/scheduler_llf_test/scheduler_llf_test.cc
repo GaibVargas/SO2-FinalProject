@@ -76,6 +76,7 @@ int main()
     chrono.start();
 
     int status_a = thread_a->join();
+    cout << "Vai main\n";
     int status_b = thread_b->join();
     int status_c = thread_c->join();
 

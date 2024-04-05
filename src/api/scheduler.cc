@@ -41,6 +41,10 @@ void LLF::update_priority() {
     }
 }
 
+void LLF::update_total_execution_time() {
+    _total_execution_time = _total_execution_time + Alarm::elapsed() - _last_started_time;
+}
+
 // Since the definition of FCFS above is only known to this unit, forcing its instantiation here so it gets emitted in scheduler.o for subsequent linking with other units is necessary.
 template FCFS::FCFS<>(int p);
 

@@ -164,7 +164,7 @@ public:
     Microsecond total_execution_time() { return _total_execution_time; }
 
     void set_last_started_time(Microsecond time) { _last_started_time = time; }
-    void set_total_execution_time(Microsecond time) { _total_execution_time = time; }
+    void update_total_execution_time() {};
 
 public:
     Microsecond _deadline;
@@ -234,6 +234,8 @@ public:
 
     void update();
     void update_priority();
+
+    void update_total_execution_time();
 };
 
 __END_SYS

@@ -18,6 +18,7 @@ void Thread::constructor_prologue(unsigned int stack_size)
     lock();
 
     _thread_count++;
+    update_priorities();
     _scheduler.insert(this);
 
     _stack = new (SYSTEM) char[stack_size];
@@ -116,7 +117,7 @@ int Thread::join()
     lock();
 
     db<Thread>(TRC) << "Thread::join(this=" << this << ",state=" << _state << ")" << endl;
-
+    db<Thread>(ERR) << "JOINN\n";
     // Precondition: no Thread::self()->join()
     assert(running() != this);
 
@@ -124,8 +125,8 @@ int Thread::join()
     assert(!_joining);
 
     if(_state != FINISHING) {
-        update_priorities();
         Thread * prev = running();
+        prev->criterion().update_total_execution_time();
 
         _joining = prev;
         prev->_state = SUSPENDED;
@@ -149,6 +150,8 @@ void Thread::pass()
     db<Thread>(TRC) << "Thread::pass(this=" << this << ")" << endl;
 
     Thread * prev = running();
+    prev->criterion().update_total_execution_time();
+    update_priorities();
     Thread * next = _scheduler.choose(this);
 
     if(next)
@@ -166,8 +169,8 @@ void Thread::suspend()
 
     db<Thread>(TRC) << "Thread::suspend(this=" << this << ")" << endl;
 
-    update_priorities();
     Thread * prev = running();
+    prev->criterion().update_total_execution_time();
 
     _state = SUSPENDED;
     _scheduler.suspend(this);
@@ -187,6 +190,8 @@ void Thread::resume()
     db<Thread>(TRC) << "Thread::resume(this=" << this << ")" << endl;
 
     if(_state == SUSPENDED) {
+        criterion().update_priority();
+        update_priorities();
         _state = READY;
         _scheduler.resume(this);
 
@@ -206,6 +211,9 @@ void Thread::yield()
     db<Thread>(TRC) << "Thread::yield(running=" << running() << ")" << endl;
 
     Thread * prev = running();
+    prev->criterion().update_total_execution_time();
+    update_priorities();
+
     Thread * next = _scheduler.choose_another();
 
     dispatch(prev, next);
@@ -219,7 +227,6 @@ void Thread::exit(int status)
     lock();
 
     db<Thread>(TRC) << "Thread::exit(status=" << status << ") [running=" << running() << "]" << endl;
-    update_priorities();
 
     Thread * prev = running();
     _scheduler.remove(prev);
@@ -247,8 +254,8 @@ void Thread::sleep(Queue * q)
     db<Thread>(TRC) << "Thread::sleep(running=" << running() << ",q=" << q << ")" << endl;
     assert(locked()); // locking handled by caller
 
-    update_priorities();
     Thread * prev = running();
+    prev->criterion().update_total_execution_time();
     _scheduler.suspend(prev);
     prev->_state = WAITING;
     prev->_waiting = q;
@@ -266,10 +273,12 @@ void Thread::wakeup(Queue * q)
 
     assert(locked()); // locking handled by caller
 
+    update_priorities();
     if(!q->empty()) {
         Thread * t = q->remove()->object();
         t->_state = READY;
         t->_waiting = 0;
+        t->criterion().update_priority();
         _scheduler.resume(t);
 
         if(preemptive) 
@@ -284,11 +293,13 @@ void Thread::wakeup_all(Queue * q)
 
     assert(locked()); // locking handled by caller
 
+    update_priorities();
     if(!q->empty()) {
         while(!q->empty()) {
             Thread * t = q->remove()->object();
             t->_state = READY;
             t->_waiting = 0;
+            t->criterion().update_priority();
             _scheduler.resume(t);
         }
 
@@ -305,15 +316,18 @@ void Thread::reschedule(bool charge)
 
     assert(locked()); // locking handled by caller
 
-    update_priorities();
     Thread * prev = running();
-    Thread * next = _scheduler.choose();
-    if (prev->priority() > next->priority()) {
-        dispatch(prev, next, charge);
-    } else {
-        _scheduler.choose(prev);
-    }
+    Thread * head = _scheduler.head()->object();
 
+    if (head == nullptr || head == prev || head->priority() > prev->priority()) return;
+
+    // Atualiza prioridade da thread, e ordena fila de threads para inserção em ordem correta
+    prev->criterion().update_total_execution_time();
+    prev->criterion().update_priority();
+    update_priorities();
+
+    Thread * next = _scheduler.choose();
+    dispatch(prev, next, charge);
 }
 
 void Thread::update_priorities() 
@@ -341,7 +355,7 @@ void Thread::time_slicer(IC::Interrupt_Id i)
 void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 {
     // "next" is not in the scheduler's queue anymore. It's already "chosen"
-
+    db<Thread>(ERR) << "DISP\n";
     if(charge) {
         if(Criterion::timed)
             _timer->restart();
@@ -353,9 +367,6 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         next->_state = RUNNING;
         
         next->criterion().set_last_started_time(Alarm::elapsed());
-        prev->criterion().set_total_execution_time(
-            prev->criterion().total_execution_time() + Alarm::elapsed() - prev->criterion().last_started_time()
-        );
 
         // db<Thread>(TRC) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;
         if(Traits<Thread>::debugged && Traits<Debug>::info) {
