@@ -117,7 +117,6 @@ int Thread::join()
     lock();
 
     db<Thread>(TRC) << "Thread::join(this=" << this << ",state=" << _state << ")" << endl;
-    db<Thread>(ERR) << "JOINN\n";
     // Precondition: no Thread::self()->join()
     assert(running() != this);
 
@@ -190,8 +189,10 @@ void Thread::resume()
     db<Thread>(TRC) << "Thread::resume(this=" << this << ")" << endl;
 
     if(_state == SUSPENDED) {
-        criterion().update_priority();
-        update_priorities();
+        if(dynamic) {
+            criterion().update_priority();
+            update_priorities();
+        }
         _state = READY;
         _scheduler.resume(this);
 
@@ -272,13 +273,13 @@ void Thread::wakeup(Queue * q)
     db<Thread>(TRC) << "Thread::wakeup(running=" << running() << ",q=" << q << ")" << endl;
 
     assert(locked()); // locking handled by caller
-
     update_priorities();
     if(!q->empty()) {
         Thread * t = q->remove()->object();
         t->_state = READY;
         t->_waiting = 0;
-        t->criterion().update_priority();
+        if(dynamic)
+            t->criterion().update_priority();
         _scheduler.resume(t);
 
         if(preemptive) 
@@ -294,12 +295,16 @@ void Thread::wakeup_all(Queue * q)
     assert(locked()); // locking handled by caller
 
     update_priorities();
+
     if(!q->empty()) {
         while(!q->empty()) {
             Thread * t = q->remove()->object();
             t->_state = READY;
             t->_waiting = 0;
-            t->criterion().update_priority();
+
+            if (dynamic)
+                t->criterion().update_priority();
+
             _scheduler.resume(t);
         }
 
@@ -309,7 +314,7 @@ void Thread::wakeup_all(Queue * q)
 }
 
 
-void Thread::reschedule(bool charge)
+void Thread::reschedule()
 {
     if(!Criterion::timed || Traits<Thread>::hysterically_debugged)
         db<Thread>(TRC) << "Thread::reschedule()" << endl;
@@ -317,17 +322,21 @@ void Thread::reschedule(bool charge)
     assert(locked()); // locking handled by caller
 
     Thread * prev = running();
-    Thread * head = _scheduler.head()->object();
 
-    if (head == nullptr || head == prev || head->priority() > prev->priority()) return;
+    auto * head = _scheduler.head();
+    if (head == nullptr) return;
+    Thread * t_next = head->object();
+    if (t_next == prev || t_next->priority() >= prev->priority()) return;
 
     // Atualiza prioridade da thread, e ordena fila de threads para inserção em ordem correta
     prev->criterion().update_total_execution_time();
-    prev->criterion().update_priority();
-    update_priorities();
+    if(dynamic) {
+        prev->criterion().update_priority();
+        update_priorities();
+    }
 
     Thread * next = _scheduler.choose();
-    dispatch(prev, next, charge);
+    dispatch(prev, next);
 }
 
 void Thread::update_priorities() 
@@ -336,8 +345,10 @@ void Thread::update_priorities()
 
     assert(locked());
 
+    if (!dynamic) return;
+
     for (auto item = _scheduler.begin(); item != _scheduler.end(); item++) {
-        auto t = item->object();
+        Thread * t = item->object();
         if (t->_link.rank() == IDLE || t->_link.rank() == MAIN) continue;
         t->criterion().update_priority();
     }
@@ -355,7 +366,6 @@ void Thread::time_slicer(IC::Interrupt_Id i)
 void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 {
     // "next" is not in the scheduler's queue anymore. It's already "chosen"
-    db<Thread>(ERR) << "DISP\n";
     if(charge) {
         if(Criterion::timed)
             _timer->restart();
@@ -365,7 +375,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         if(prev->_state == RUNNING)
             prev->_state = READY;
         next->_state = RUNNING;
-        
+
         next->criterion().set_last_started_time(Alarm::elapsed());
 
         // db<Thread>(TRC) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;

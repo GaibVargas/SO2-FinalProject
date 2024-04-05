@@ -25,6 +25,7 @@ class Thread
 
 protected:
     static const bool preemptive = Traits<Thread>::Criterion::preemptive;
+    static const bool dynamic = Traits<Thread>::Criterion::dynamic;
     static const bool reboot = Traits<System>::reboot;
 
     static const unsigned int QUANTUM = Traits<Thread>::QUANTUM;
@@ -107,7 +108,7 @@ protected:
     static void wakeup(Queue * q);
     static void wakeup_all(Queue * q);
 
-    static void reschedule(bool charge = true);
+    static void reschedule();
     static void time_slicer(IC::Interrupt_Id interrupt);
     static void update_priorities();
 
