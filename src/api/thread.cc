@@ -335,7 +335,7 @@ void Thread::reschedule()
         update_priorities();
     }
 
-    Thread * next = _scheduler.choose();
+    Thread * next = _scheduler.choose(); // insere _chosen anterior na fila
     dispatch(prev, next);
 }
 
