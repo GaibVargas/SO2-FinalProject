@@ -45,7 +45,7 @@ inline void exec(char c, unsigned int time = 0) // in miliseconds
                     << ", p(B)=" << thread_b->priority()
                     << ", p(C)=" << thread_c->priority() << "]";
                 last = elapsed;
-                // ANNOTATOION: ainda não faz uso de todo o tempo que é dado
+                // ANNOTATION: ainda não faz uso de todo o tempo que é dado
                 // somar de um em um é o mesmo que assumir que o for é executado time vezes
                 counter = counter + 1;
             }
@@ -60,9 +60,9 @@ int main()
     cout << "Periodic Thread Component Test" << endl;
 
     cout << "\nThis test consists in creating three periodic threads as follows:" << endl;
-    cout << "- Every " << period_a << "ms, thread A execs \"a\", waits for " << wcet_a << "ms and then execs another \"a\";" << endl;
-    cout << "- Every " << period_b << "ms, thread B execs \"b\", waits for " << wcet_b << "ms and then execs another \"b\";" << endl;
-    cout << "- Every " << period_c << "ms, thread C execs \"c\", waits for " << wcet_c << "ms and then execs another \"c\";" << endl;
+    cout << "- Every " << period_a << "ms, thread A execs \"a\" waits for " << wcet_a << "ms \"a\";" << endl;
+    cout << "- Every " << period_b << "ms, thread B execs \"b\" waits for " << wcet_b << "ms \"b\";" << endl;
+    cout << "- Every " << period_c << "ms, thread C execs \"c\" waits for " << wcet_c << "ms \"c\";" << endl;
 
     cout << "Threads will now be created and I'll wait for them to finish..." << endl;
 
@@ -88,7 +88,7 @@ int main()
          << "\", thread B exited with status \"" << char(status_b)
          << "\" and thread C exited with status \"" << char(status_c) << "." << endl;
 
-    cout << "\nThe estimated time to run the  est was "
+    cout << "\nThe estimated time to run the test was "
          << max(period_a, period_b, period_c) * iterations
          << " ms. The measured time was " << chrono.read() / 1000 <<" ms!" << endl;
 
