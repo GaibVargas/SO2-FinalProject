@@ -427,4 +427,12 @@ int Thread::idle()
     return 0;
 }
 
+void Thread::analyze_borrowed_priority(Thread *t, Synchronizer_Common *s) {
+    // TODO: Tem que implementar.
+}
+
+void Thread::analyze_remove_borrowed_priority(Synchronizer_Common *s) {
+    // TODO: Tem que implementar.
+}
+
 __END_SYS

@@ -13,6 +13,8 @@ extern "C" { void __exit(); }
 
 __BEGIN_SYS
 
+//ANNOTATION: Resolve dependência circular
+class Synchronizer_Common;
 class Thread
 {
     friend class Init_End;              // context->load()
@@ -115,6 +117,9 @@ protected:
     static void dispatch(Thread * prev, Thread * next, bool charge = true);
 
     static int idle();
+
+    void analyze_borrowed_priority(Thread *t, Synchronizer_Common *s);
+    void analyze_remove_borrowed_priority(Synchronizer_Common *s);
 
 private:
     static void init();

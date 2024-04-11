@@ -10,6 +10,16 @@ Real_Time_Scheduler_Common::Real_Time_Scheduler_Common(int i, const Microsecond 
         _absolute_deadline = Alarm::elapsed() + _deadline;
     }
 
+void Real_Time_Scheduler_Common::set_borrowed_priority() {
+    _using_borrowed_priority = true;
+    _priority = HIGHEST;
+}
+
+void Real_Time_Scheduler_Common::set_original_priority() {
+    _using_borrowed_priority = false;
+    update_priority();
+}
+
 // The following Scheduling Criteria depend on Alarm, which is not available at scheduler.h
 template <typename ... Tn>
 FCFS::FCFS(int p, Tn & ... an): Priority((p == IDLE) ? IDLE : Alarm::elapsed()) {}
@@ -28,17 +38,13 @@ void LLF::update() {
     _absolute_deadline = Alarm::elapsed() + _deadline;
     _total_execution_time = 0;
     _last_started_time = 0;
-    if((_priority >= PERIODIC) && (_priority < APERIODIC))
-        _priority = _deadline - _expected_execution_time;
+    _priority = _deadline - _expected_execution_time;
 }
 
 void LLF::update_priority() {
-    if((_priority >= PERIODIC) && (_priority < APERIODIC)) {
-        _priority = _absolute_deadline - Alarm::elapsed() - (_expected_execution_time - _total_execution_time);
-        if (_priority <= 0) {
-            _priority = 0;
-        }
-    }
+    if (_priority == IDLE) return;
+    if (_using_borrowed_priority) return;
+    _priority = _absolute_deadline - Alarm::elapsed() - (_expected_execution_time - _total_execution_time);
 }
 
 void LLF::update_total_execution_time() {

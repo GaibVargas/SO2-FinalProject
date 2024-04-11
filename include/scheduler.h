@@ -27,6 +27,7 @@ public:
     enum : int {
         ISR    = -1000,
         MAIN   = -1,
+        HIGHEST = -((1 << (sizeof(int) * 8 - 2)) - 1),
         HIGH   = 0,
         NORMAL = (unsigned(1) << (sizeof(int) * 8 - 2)) - 1,
         LOW    = (unsigned(1) << (sizeof(int) * 8 - 1)) - 2,
@@ -166,6 +167,9 @@ public:
     void set_last_started_time(Microsecond time) { _last_started_time = time; }
     void update_total_execution_time() {};
 
+    void set_borrowed_priority();
+    void set_original_priority();
+
 public:
     Microsecond _deadline;
     Microsecond _period;
@@ -175,6 +179,8 @@ public:
     Microsecond _absolute_deadline;
     Microsecond _total_execution_time = 0;
     Microsecond _last_started_time = 0;
+
+    bool _using_borrowed_priority = false;
 };
 
 // Rate Monotonic

@@ -6,6 +6,7 @@
 #include <architecture.h>
 #include <utility/handler.h>
 #include <process.h>
+#include <utility/list.h>
 
 __BEGIN_SYS
 
@@ -13,10 +14,17 @@ class Synchronizer_Common
 {
 protected:
     typedef Thread::Queue Queue;
+    typedef List<Thread> Thread_List;
+    typedef List<Thread>::Element Thread_List_Element;
 
 protected:
     Synchronizer_Common() {}
-    ~Synchronizer_Common() { begin_atomic(); wakeup_all(); end_atomic(); }
+    ~Synchronizer_Common() {
+        begin_atomic();
+        remove_all_lent_priorities();
+        wakeup_all();
+        end_atomic(); 
+    }
 
     // Atomic operations
     bool tsl(volatile bool & lock) { return CPU::tsl(lock); }
@@ -31,8 +39,14 @@ protected:
     void wakeup() { Thread::wakeup(&_queue); }
     void wakeup_all() { Thread::wakeup_all(&_queue); }
 
+    void insert_thread(Thread * t);
+    void remove_thread(Thread * t);
+    void pass_priority_to_threads(Thread * t);
+    void remove_all_lent_priorities();
+
 protected:
     Queue _queue;
+    Thread_List _running_queue;
 };
 
 
