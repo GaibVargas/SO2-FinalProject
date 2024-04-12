@@ -17,6 +17,8 @@ void Synchronizer_Common::remove_thread(Thread *t) {
 void Synchronizer_Common::pass_priority_to_threads(Thread *t) {
     for (auto i = _running_queue.begin(); i != _running_queue.end(); i++) {
         i->object()->analyze_borrowed_priority(t, this);
+        //ANNOTATION: se o método retornar um bool pra informar caso tenha mudado a prioridade?
+        // Assim poderia ser dado break no for e só uma thread teria sua prioridade aumentada
     }
 }
 
