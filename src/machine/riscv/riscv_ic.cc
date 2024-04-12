@@ -31,9 +31,12 @@ void IC::entry()
     CPU::iret();
 }
 
+// ANNOTATION: handler de interrupção de tempo
 void IC::dispatch()
 {
     Interrupt_Id id = int_id();
+    db<IC>(INF) << "\nTempo do sistema entrada: " << CLINT::mtime() << endl;
+    db<IC>(INF) << "IC::dispatch(i=" << id << ") [sp=" << CPU::sp() << "] [epc=" << hex << CPU::epc() << ']' << endl;
 
     if((id != INT_SYS_TIMER) || Traits<IC>::hysterically_debugged)
         db<IC, System>(TRC) << "IC::dispatch(i=" << id << ") [sp=" << CPU::sp() << "]" << endl;
@@ -49,6 +52,7 @@ void IC::dispatch()
 
     if(id >= EXCS)
         CPU::fr(0); // tell CPU::Context::pop(true) not to increment PC since it is automatically incremented for hardware interrupts
+    db<IC>(INF) << "Tempo do sistema saída: " << CLINT::mtime() << endl;
 }
 
 void IC::int_not(Interrupt_Id id)

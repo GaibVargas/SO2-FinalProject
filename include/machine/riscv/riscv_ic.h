@@ -247,7 +247,7 @@ public:
         // Id is retrieved from [m|s]cause even if mip has the equivalent bit up, because only [m|s]cause can tell if it is an interrupt or an exception
         Reg id = CPU::cause();
         if(id & INTERRUPT)
-            return irq2int(id & INT_MASK);
+            return irq2int(id & INT_MASK); // ANNOTATION: faz conversão das exceções para o id do EPOS, id scause + 16
         else
             return (id & INT_MASK);
     }

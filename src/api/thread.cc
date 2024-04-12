@@ -382,7 +382,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         if(Traits<Thread>::debugged && Traits<Debug>::info) {
             CPU::Context tmp;
             tmp.save();
-            db<Thread>(INF) << "Thread::dispatch:prev={" << prev << ",ctx=" << tmp << "}" << endl;
+            // db<Thread>(INF) << "Thread::dispatch:prev={" << prev << ",ctx=" << tmp << "}" << endl;
         }
         // db<Thread>(INF) << "Thread::dispatch:next={" << next << ",ctx=" << *next->_context << "}" << endl;
 

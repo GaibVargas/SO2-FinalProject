@@ -62,6 +62,7 @@ public:
 
 template <> struct Traits<IC>: public Traits<Machine_Common>
 {
+    static const bool hysterically_debugged = true; // ANNOTATION: debugger do IC ligado
     static const bool debugged = hysterically_debugged;
 
     static const unsigned int PLIC_IRQS = 54;           // IRQ0 is used by PLIC to signalize that there is no interrupt being serviced or pending
@@ -94,7 +95,7 @@ template <> struct Traits<Timer>: public Traits<Machine_Common>
     // Meaningful values for the timer frequency range from 100 to 10000 Hz. The
     // choice must respect the scheduler time-slice, i. e., it must be higher
     // than the scheduler invocation frequency.
-    static const long FREQUENCY = 1000; // Hz
+    static const long FREQUENCY = 500; // Hz
 };
 
 template <> struct Traits<UART>: public Traits<Machine_Common>
