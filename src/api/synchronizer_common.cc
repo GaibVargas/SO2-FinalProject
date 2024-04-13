@@ -16,11 +16,18 @@ void Synchronizer_Common::remove_thread(Thread *t) {
 }
 
 void Synchronizer_Common::pass_priority_to_threads(Thread *t) {
+    // ANNOTATION: a thread de prioridade mais alta dentro da região crítica, com prioridade mais baixa que t
+    Thread *prioritize_thread = nullptr;
     for (auto i = _running_queue.begin(); i != _running_queue.end(); i++) {
-        i->object()->analyze_borrowed_priority(t, this);
-        //ANNOTATION: se o método retornar um bool pra informar caso tenha mudado a prioridade?
-        // Assim poderia ser dado break no for e só uma thread teria sua prioridade aumentada
+        if (i->object()->priority() > t->priority()) {
+            if (prioritize_thread == nullptr)
+                prioritize_thread = i->object();
+            else if (prioritize_thread->priority() > i->object()->priority())
+                prioritize_thread = i->object();
+        }
     }
+    if (prioritize_thread)
+        prioritize_thread->analyze_borrowed_priority(t, this);
 }
 
 void Synchronizer_Common::remove_all_lent_priorities() {

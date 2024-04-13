@@ -49,35 +49,41 @@ int main()
 
 int func_l()
 {
-    cout << "Executing low \n";
+    cout << "Executing low p(l) = " << thread_l->priority() << endl;
+    cout << "Low tries to get mutex" << endl;
     mutex->lock();
-    cout << "Low gets mutex \n";
+    cout << "Low gets mutex " << endl;
+    cout << "Executing low inside mutex p(l) = " << thread_l->priority() << endl;
+    cout << "Low creates thread High " << endl;
     thread_h = new Periodic_Thread(RTConf(period_h * 1000, 0, 0, 0, iterations, wcet_h * 1000), &func_h);
-    cout << "Executing low \n";
-    cout << "Low releases mutex \n";
+    cout << "Executing low inside mutex p(l) = " << thread_l->priority() << endl;
+    cout << "Low releases mutex " << endl;
     mutex->unlock();
-    cout << "Low done\n";
+    cout << "Executing low p(l) = " << thread_l->priority() << endl;
+    cout << "Low done" << endl;
 
     return 0;
 }
 
 int func_m()
 {
-    cout << "Executing medium \n";
-    cout << "Medium done \n";
+    cout << "Executing medium" << endl;
+    cout << "Medium done " << endl;
     return 0;
 }
 
 int func_h()
 {
-    cout << "Executing high \n";
+    cout << "High creates thread Medium" << endl;
     thread_m = new Periodic_Thread(RTConf(period_m * 1000, 0, 0, 0, iterations, wcet_m * 1000), &func_m);
-    cout << "Executing high \n";
+    cout << "Executing high" << endl;
+    cout << "High tries to get mutex" << endl;
     mutex->lock();
-    cout << "High gets mutex \n";
-    cout << "Executing high \n";
-    cout << "High releases mutex \n";
+    cout << "High gets mutex " << endl;
+    cout << "Executing high inside mutex" << endl;
+    cout << "High releases mutex " << endl;
     mutex->unlock();
-    cout << "High done \n";
+    cout << "Executing high" << endl;
+    cout << "High done " << endl;
     return 0;
 }
