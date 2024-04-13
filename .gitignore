@@ -4,3 +4,4 @@ app/*/**[!.(cc | h)]
 tools/eposcc
 tools/eposcfg
 tools/eposmkbi
+!makefile

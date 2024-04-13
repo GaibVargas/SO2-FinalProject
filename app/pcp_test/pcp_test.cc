@@ -37,9 +37,7 @@ int main()
     chrono.start();
 
     thread_l->join();
-    cout << "DEu join na medium\n";
     thread_m->join();
-    cout << "Liberou o join na medium\n";
     thread_h->join();
 
     chrono.stop();
@@ -55,10 +53,8 @@ int func_l()
     mutex->lock();
     cout << "Low gets mutex \n";
     thread_h = new Periodic_Thread(RTConf(period_h * 1000, 0, 0, 0, iterations, wcet_h * 1000), &func_h);
-    cout << "\t[p(L)=" << thread_l->priority()
-    << ", p(M)=" << thread_m->priority()
-    << ", p(H)=" << thread_h->priority() << "]";
     cout << "Executing low \n";
+    cout << "Low releases mutex \n";
     mutex->unlock();
     cout << "Low done\n";
 
@@ -67,10 +63,6 @@ int func_l()
 
 int func_m()
 {
-    // cout << "\t[p(L)=" << thread_l->priority()
-    // << ", p(M)=" << thread_m->priority()
-    // << ", p(H)=" << thread_h->priority() << "]";
-
     cout << "Executing medium \n";
     cout << "Medium done \n";
     return 0;
@@ -80,17 +72,12 @@ int func_h()
 {
     cout << "Executing high \n";
     thread_m = new Periodic_Thread(RTConf(period_m * 1000, 0, 0, 0, iterations, wcet_m * 1000), &func_m);
-    // cout << "\t[p(L)=" << thread_l->priority()
-    // << ", p(M)=" << thread_m->priority()
-    // << ", p(H)=" << thread_h->priority() << "]";
     cout << "Executing high \n";
     mutex->lock();
     cout << "High gets mutex \n";
     cout << "Executing high \n";
+    cout << "High releases mutex \n";
     mutex->unlock();
     cout << "High done \n";
-    cout << "\t[p(L)=" << thread_l->priority()
-    << ", p(M)=" << thread_m->priority()
-    << ", p(H)=" << thread_h->priority() << "]";
     return 0;
 }

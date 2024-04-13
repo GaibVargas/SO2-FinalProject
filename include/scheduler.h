@@ -240,6 +240,7 @@ public:
 
     void update();
     void update_priority();
+    void set_original_priority();
 
     void update_total_execution_time();
 };

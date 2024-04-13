@@ -243,7 +243,6 @@ void Thread::exit(int status)
     }
 
     Thread * next = _scheduler.choose(); // at least idle will always be there
-    db<Thread>(ERR) << "Próximo: " << next->priority() << "\n";
     dispatch(prev, next);
 
     unlock();
@@ -429,7 +428,6 @@ int Thread::idle()
 
 void Thread::analyze_borrowed_priority(Thread *t, Synchronizer_Common *s) {
     assert(locked());
-
     if (t->priority() >= priority()) return;
     _borrowed_priority_synchronizer = s;
     _scheduler.remove(this);
@@ -437,11 +435,10 @@ void Thread::analyze_borrowed_priority(Thread *t, Synchronizer_Common *s) {
     _scheduler.insert(this);
 }
 
+// Chamada pela running ao sair de uma região crítica
 void Thread::analyze_remove_borrowed_priority(Synchronizer_Common *s) {
     if (s != _borrowed_priority_synchronizer) return;
-    _scheduler.remove(this);
     criterion().set_original_priority();
-    _scheduler.insert(this);
     _borrowed_priority_synchronizer = nullptr;
 }
 
