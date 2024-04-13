@@ -23,6 +23,8 @@ void Semaphore::p()
     begin_atomic();
     if(fdec(_value) < 1)
         sleep();
+    else
+        insert_thread(Thread::running()); // ANNOTATION: Pode dar ruim?
     end_atomic();
 }
 

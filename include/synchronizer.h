@@ -35,8 +35,16 @@ protected:
     void begin_atomic() { Thread::lock(); }
     void end_atomic() { Thread::unlock(); }
 
-    void sleep() { Thread::sleep(&_queue); }
-    void wakeup() { Thread::wakeup(&_queue); }
+    void sleep() {
+        pass_priority_to_threads(Thread::running());
+        Thread::sleep(&_queue);
+        insert_thread(Thread::running()); // ANNOTATION: Pode dar ruim?
+    }
+    void wakeup() {
+        Thread::running()->analyze_remove_borrowed_priority(this); 
+        remove_thread(Thread::running());
+        Thread::wakeup(&_queue); 
+    }
     void wakeup_all() { Thread::wakeup_all(&_queue); }
 
     void insert_thread(Thread * t);

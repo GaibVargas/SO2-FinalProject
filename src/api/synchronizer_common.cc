@@ -11,7 +11,8 @@ void Synchronizer_Common::insert_thread(Thread *t) {
 }
 
 void Synchronizer_Common::remove_thread(Thread *t) {
-    _running_queue.remove(t);
+    auto link = _running_queue.remove(t);
+    delete link;
 }
 
 void Synchronizer_Common::pass_priority_to_threads(Thread *t) {
