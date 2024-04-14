@@ -43,6 +43,8 @@ void IC::dispatch()
     IC::start_interruption_time[IC::current_interruption_index] = CLINT::mtime();
     Interrupt_Id id = int_id();
 
+    db<IC>(INF) << "\nIC::dispatch -> SP = " << CPU::sp() << " EPC = " << hex << CPU::epc() << endl;
+
     if (IC::current_interruption_index == 0) {
         db<IC>(INF) << "\n\tTempo do SO: " << IC::totalSO << "\n\tTempo total do sistema: " << IC::totalApp + IC::totalSO << endl;
         db<IC>(INF) << "\tPorcentagem: " << (100 * IC::totalSO) / (IC::totalApp + IC::totalSO) << endl;
