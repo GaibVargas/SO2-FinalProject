@@ -128,6 +128,11 @@ Setup::Setup()
     // Enable paging
     enable_paging();
 
+    if (Traits<Timer>::FREQUENCY > Traits<Timer>::MAX_FREQUENCY) {
+        kout << "Frequência muito alta.";
+        Machine::panic();
+    }
+
     // SETUP ends here, so let's transfer control to the next stage (INIT or APP)
     call_next();
 }

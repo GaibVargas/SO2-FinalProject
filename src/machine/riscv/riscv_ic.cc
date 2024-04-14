@@ -12,6 +12,12 @@ __BEGIN_SYS
 
 PLIC::Reg32 PLIC::_claimed;
 IC::Interrupt_Handler IC::_int_vector[IC::INTS];
+int IC::current_interruption_index = 0;
+UInt64 IC::totalSO = 0;
+UInt64 IC::totalApp = 0;
+UInt64 IC::start_interruption_time[n_interruption];
+UInt64 IC::end_interruption_time[n_interruption];
+
 
 void IC::entry()
 {
@@ -20,11 +26,9 @@ void IC::entry()
 
     if(Traits<IC>::hysterically_debugged)
         print_context(true);
-    db<IC>(INF) << "\nTempo do sistema entrada: \n" << CLINT::mtime() << endl;
 
     dispatch();
 
-    db<IC>(INF) << "Tempo do sistema saída: \n" << CLINT::mtime() << endl;
     if(Traits<IC>::hysterically_debugged)
         print_context(false);
 
@@ -36,9 +40,14 @@ void IC::entry()
 // ANNOTATION: handler de interrupção de tempo
 void IC::dispatch()
 {
+    IC::start_interruption_time[IC::current_interruption_index] = CLINT::mtime();
     Interrupt_Id id = int_id();
 
-    // db<IC>(INF) << "IC::dispatch(i=" << id << ") [sp=" << CPU::sp() << "] [epc=" << hex << CPU::epc() << ']' << endl;
+    if (IC::current_interruption_index == 0) {
+        db<IC>(INF) << "\n\tTempo do SO: " << IC::totalSO << "\n\tTempo total do sistema: " << IC::totalApp + IC::totalSO << endl;
+        db<IC>(INF) << "\tPorcentagem: " << (100 * IC::totalSO) / (IC::totalApp + IC::totalSO) << endl;
+    }
+        
 
     if((id != INT_SYS_TIMER) || Traits<IC>::hysterically_debugged)
         db<IC, System>(TRC) << "IC::dispatch(i=" << id << ") [sp=" << CPU::sp() << "]" << endl;
@@ -54,6 +63,20 @@ void IC::dispatch()
 
     if(id >= EXCS)
         CPU::fr(0); // tell CPU::Context::pop(true) not to increment PC since it is automatically incremented for hardware interrupts
+    
+    IC::end_interruption_time[IC::current_interruption_index] = CLINT::mtime();
+    if (IC::current_interruption_index < IC::n_interruption - 1)
+        IC::current_interruption_index++;
+    else {
+        IC::totalSO = 0;
+        for (int i = 0; i < n_interruption; i++) {
+            IC::totalSO += (IC::end_interruption_time[i] - IC::start_interruption_time[i]);
+        }
+
+        IC::totalApp = IC::end_interruption_time[IC::n_interruption - 1] - IC::totalSO - IC::totalApp;            
+        IC::current_interruption_index = 0;
+    }
+
 }
 
 void IC::int_not(Interrupt_Id id)

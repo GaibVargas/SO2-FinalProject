@@ -139,6 +139,13 @@ private:
 
     static const bool supervisor = Traits<Machine>::supervisor;
 
+    static const int n_interruption = 10;
+    static int current_interruption_index;
+    static UInt64 start_interruption_time[n_interruption];
+    static UInt64 end_interruption_time[n_interruption];
+    static UInt64 totalSO;
+    static UInt64 totalApp;
+
 public:
     static const unsigned int EXCS = CPU::EXCEPTIONS;
     static const unsigned int IRQS = CLINT::IRQS + PLIC::IRQS;
