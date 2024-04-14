@@ -19,7 +19,7 @@ template<> struct Traits<Build>: public Traits_Tokens
 
     // Default flags
     static const bool enabled = true;
-    static const bool debugged = true;
+    static const bool debugged = false; // ANNOTATION: para debuggar é necessário ligar para cada componente
     static const bool hysterically_debugged = false;
 };
 
@@ -112,10 +112,11 @@ template<> struct Traits<System>: public Traits<Build>
 
 template<> struct Traits<Thread>: public Traits<Build>
 {
+    static const bool debugged = true;
     static const bool enabled = Traits<System>::multithread;
     static const bool trace_idle = hysterically_debugged;
     static const bool simulate_capacity = false;
-
+    
     typedef LLF Criterion;
     static const unsigned int QUANTUM = 10000; // us
 };
