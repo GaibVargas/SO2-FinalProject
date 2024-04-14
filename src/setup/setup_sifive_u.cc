@@ -128,6 +128,11 @@ Setup::Setup()
     // Enable paging
     enable_paging();
 
+    if (Traits<Timer>::FREQUENCY > Traits<Timer>::MAX_FREQUENCY) {
+        kout << "Frequência muito alta.";
+        Machine::panic();
+    }
+
     // SETUP ends here, so let's transfer control to the next stage (INIT or APP)
     call_next();
 }
@@ -724,7 +729,7 @@ if(Traits<CPU>::WORD_SIZE == 32) {
 }
 
     CPU::Reg id = CPU::mcause();
-
+    // ANNOTATION: redirecionamento da exceção de tempo
     if((id & CLINT::INT_MASK) == CLINT::IRQ_MAC_TIMER) {
         Timer::reset();                                 // MIP.MTI is a direct logic on (MTIME == MTIMECMP) and reseting the Timer (i.e. adjusting MTIMECMP) seems to be the only way to clear it
         CPU::mips(CPU::STI);                            // forward desired interrupts to supervisor mode

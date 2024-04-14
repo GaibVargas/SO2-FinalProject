@@ -139,6 +139,13 @@ private:
 
     static const bool supervisor = Traits<Machine>::supervisor;
 
+    static const int n_interruption = 10;
+    static int current_interruption_index;
+    static UInt64 start_interruption_time[n_interruption];
+    static UInt64 end_interruption_time[n_interruption];
+    static UInt64 totalSO;
+    static UInt64 totalApp;
+
 public:
     static const unsigned int EXCS = CPU::EXCEPTIONS;
     static const unsigned int IRQS = CLINT::IRQS + PLIC::IRQS;
@@ -247,7 +254,7 @@ public:
         // Id is retrieved from [m|s]cause even if mip has the equivalent bit up, because only [m|s]cause can tell if it is an interrupt or an exception
         Reg id = CPU::cause();
         if(id & INTERRUPT)
-            return irq2int(id & INT_MASK);
+            return irq2int(id & INT_MASK); // ANNOTATION: faz conversão das exceções para o id do EPOS, id scause + 16
         else
             return (id & INT_MASK);
     }

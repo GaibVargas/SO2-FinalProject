@@ -381,7 +381,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         if(Traits<Thread>::debugged && Traits<Debug>::info) {
             CPU::Context tmp;
             tmp.save();
-            db<Thread>(INF) << "Thread::dispatch:prev={" << prev << ",ctx=" << tmp << "}" << endl;
+            // db<Thread>(INF) << "Thread::dispatch:prev={" << prev << ",ctx=" << tmp << "}" << endl;
         }
         // db<Thread>(INF) << "Thread::dispatch:next={" << next << ",ctx=" << *next->_context << "}" << endl;
 
@@ -390,6 +390,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         // passing the volatile to switch_constext forces it to push prev onto the stack,
         // disrupting the context (it doesn't make a difference for Intel, which already saves
         // parameters on the stack anyway).
+        db<Thread>(INF) << "\nCPU::switch_context -> SP = " << CPU::sp() << " EPC = " << hex << CPU::epc() << endl;
         CPU::switch_context(const_cast<Context **>(&prev->_context), next->_context);
     }
 }
