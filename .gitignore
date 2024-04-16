@@ -1,3 +1,4 @@
+.vscode
 img
 app/*/**.o
 app/*/**[!.(cc | h)]

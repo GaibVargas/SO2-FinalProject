@@ -14,15 +14,13 @@ PLIC::Reg32 PLIC::_claimed;
 IC::Interrupt_Handler IC::_int_vector[IC::INTS];
 int IC::current_interruption_index = 0;
 UInt64 IC::totalSO = 0;
-UInt64 IC::totalApp = 0;
-UInt64 IC::start_interruption_time[n_interruption];
-UInt64 IC::end_interruption_time[n_interruption];
-
+UInt64 IC::total = 0;
 
 void IC::entry()
 {
     // Save context into the stack
     CPU::Context::push(true);
+    auto start = mtime();
 
     if(Traits<IC>::hysterically_debugged)
         print_context(true);
@@ -32,6 +30,18 @@ void IC::entry()
     if(Traits<IC>::hysterically_debugged)
         print_context(false);
 
+    if (IC::current_interruption_index == 0)
+        IC::totalSO = 0;
+
+    if (IC::current_interruption_index < IC::n_interruption - 1) {
+        IC::totalSO += (mtime() - start);
+        IC::current_interruption_index++;
+    } else {
+        auto end = mtime();
+        IC::totalSO += (end - start);
+        IC::total = end - IC::total;
+        IC::current_interruption_index = 0;
+    }
     // Restore context from the stack
     CPU::Context::pop(true);
     CPU::iret();    
@@ -40,16 +50,10 @@ void IC::entry()
 // ANNOTATION: handler de interrupção de tempo
 void IC::dispatch()
 {
-    IC::start_interruption_time[IC::current_interruption_index] = CLINT::mtime();
+    db<IC>(INF) << "\nIC::dispatch start -> mtime=" << mtime() <<" SP=" << CPU::sp() << " EPC=" << hex << CPU::epc() << endl;
+    if (IC::current_interruption_index == 0 && IC::total != 0)
+        db<IC>(INF) << "\n\tTempo do SO: " << IC::totalSO << "\n\tTempo total: " << IC::total << "\n\tPorcentagem: " << 100 * IC::totalSO / IC::total << endl;
     Interrupt_Id id = int_id();
-
-    db<IC>(INF) << "\nIC::dispatch -> SP = " << CPU::sp() << " EPC = " << hex << CPU::epc() << endl;
-
-    if (IC::current_interruption_index == 0) {
-        db<IC>(INF) << "\n\tTempo do SO: " << IC::totalSO << "\n\tTempo total do sistema: " << IC::totalApp + IC::totalSO << endl;
-        db<IC>(INF) << "\tPorcentagem: " << (100 * IC::totalSO) / (IC::totalApp + IC::totalSO) << endl;
-    }
-        
 
     if((id != INT_SYS_TIMER) || Traits<IC>::hysterically_debugged)
         db<IC, System>(TRC) << "IC::dispatch(i=" << id << ") [sp=" << CPU::sp() << "]" << endl;
@@ -66,19 +70,7 @@ void IC::dispatch()
     if(id >= EXCS)
         CPU::fr(0); // tell CPU::Context::pop(true) not to increment PC since it is automatically incremented for hardware interrupts
     
-    IC::end_interruption_time[IC::current_interruption_index] = CLINT::mtime();
-    if (IC::current_interruption_index < IC::n_interruption - 1)
-        IC::current_interruption_index++;
-    else {
-        IC::totalSO = 0;
-        for (int i = 0; i < n_interruption; i++) {
-            IC::totalSO += (IC::end_interruption_time[i] - IC::start_interruption_time[i]);
-        }
-
-        IC::totalApp = IC::end_interruption_time[IC::n_interruption - 1] - IC::totalSO - IC::totalApp;            
-        IC::current_interruption_index = 0;
-    }
-
+    db<IC>(INF) << "\nIC::dispatch end -> mtime=" << mtime() <<" SP=" << CPU::sp() << " EPC=" << hex << CPU::epc() << endl;
 }
 
 void IC::int_not(Interrupt_Id id)
