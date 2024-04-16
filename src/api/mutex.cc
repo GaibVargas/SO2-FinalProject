@@ -23,6 +23,8 @@ void Mutex::lock()
     begin_atomic();
     if(tsl(_locked))
         sleep();
+    else
+        insert_thread(Thread::running()); // ANNOTATION: Pode dar ruim?
     end_atomic();
 }
 
@@ -32,8 +34,10 @@ void Mutex::unlock()
     db<Synchronizer>(TRC) << "Mutex::unlock(this=" << this << ")" << endl;
 
     begin_atomic();
-    if(_queue.empty())
+    if(_queue.empty()) {
         _locked = false;
+        remove_thread(Thread::running());
+    }
     else
         wakeup();
     end_atomic();

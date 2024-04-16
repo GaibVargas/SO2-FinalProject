@@ -83,7 +83,7 @@ void Alarm::delay(const Microsecond & time)
     semaphore.p();
 }
 
-
+// ANNOTATION: Esse cara controla o Alarme conforme ocorre interrupção de tempo
 void Alarm::handler(IC::Interrupt_Id i)
 {
     lock();

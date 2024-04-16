@@ -13,6 +13,8 @@ extern "C" { void __exit(); }
 
 __BEGIN_SYS
 
+//ANNOTATION: Resolve dependência circular
+class Synchronizer_Common;
 class Thread
 {
     friend class Init_End;              // context->load()
@@ -22,6 +24,8 @@ class Thread
     friend class Alarm;                 // for lock()
     friend class System;                // for init()
     friend class IC;                    // for link() for priority ceiling
+    friend class Mutex;
+    friend class Semaphore;
 
 protected:
     static const bool preemptive = Traits<Thread>::Criterion::preemptive;
@@ -116,6 +120,9 @@ protected:
 
     static int idle();
 
+    void analyze_borrowed_priority(Thread *t, Synchronizer_Common *s);
+    void analyze_remove_borrowed_priority(Synchronizer_Common *s);
+
 private:
     static void init();
 
@@ -127,6 +134,7 @@ protected:
     Thread * volatile _joining;
     Queue::Element _link;
 
+    Synchronizer_Common * _borrowed_priority_synchronizer = nullptr;
     static bool _not_booting;
     static volatile unsigned int _thread_count;
     static Scheduler_Timer * _timer;

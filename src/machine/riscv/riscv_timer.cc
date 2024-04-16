@@ -7,6 +7,7 @@ __BEGIN_SYS
 
 Timer * Timer::_channels[CHANNELS];
 
+//ANNOTATION: Chama o handler de interrupção específico (interrupção de tempo)
 void Timer::int_handler(Interrupt_Id i)
 {
     if(_channels[ALARM] && (--_channels[ALARM]->_current <= 0)) {

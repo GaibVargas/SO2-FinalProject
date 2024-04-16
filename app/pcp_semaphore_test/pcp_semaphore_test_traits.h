@@ -29,7 +29,7 @@ template<> struct Traits<Debug>: public Traits<Build>
 {
     static const bool error   = true;
     static const bool warning = true;
-    static const bool info    = true;
+    static const bool info    = false;
     static const bool trace   = false;
 };
 
@@ -112,7 +112,7 @@ template<> struct Traits<System>: public Traits<Build>
 
 template<> struct Traits<Thread>: public Traits<Build>
 {
-    static const bool debugged = false;
+    static const bool debugged = true;
     static const bool enabled = Traits<System>::multithread;
     static const bool trace_idle = hysterically_debugged;
     static const bool simulate_capacity = false;

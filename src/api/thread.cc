@@ -243,7 +243,6 @@ void Thread::exit(int status)
     }
 
     Thread * next = _scheduler.choose(); // at least idle will always be there
-
     dispatch(prev, next);
 
     unlock();
@@ -382,7 +381,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         if(Traits<Thread>::debugged && Traits<Debug>::info) {
             CPU::Context tmp;
             tmp.save();
-            db<Thread>(INF) << "Thread::dispatch:prev={" << prev << ",ctx=" << tmp << "}" << endl;
+            // db<Thread>(INF) << "Thread::dispatch:prev={" << prev << ",ctx=" << tmp << "}" << endl;
         }
         // db<Thread>(INF) << "Thread::dispatch:next={" << next << ",ctx=" << *next->_context << "}" << endl;
 
@@ -391,6 +390,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         // passing the volatile to switch_constext forces it to push prev onto the stack,
         // disrupting the context (it doesn't make a difference for Intel, which already saves
         // parameters on the stack anyway).
+        db<Thread>(INF) << "\nCPU::switch_context -> SP = " << CPU::sp() << " EPC = " << hex << CPU::epc() << endl;
         CPU::switch_context(const_cast<Context **>(&prev->_context), next->_context);
     }
 }
@@ -425,6 +425,22 @@ int Thread::idle()
     for(;;);
 
     return 0;
+}
+
+void Thread::analyze_borrowed_priority(Thread *t, Synchronizer_Common *s) {
+    assert(locked());
+    if (t->priority() >= priority()) return;
+    _borrowed_priority_synchronizer = s;
+    _scheduler.remove(this);
+    criterion().set_borrowed_priority();
+    _scheduler.insert(this);
+}
+
+// Chamada pela running ao sair de uma região crítica
+void Thread::analyze_remove_borrowed_priority(Synchronizer_Common *s) {
+    if (s != _borrowed_priority_synchronizer) return;
+    criterion().set_original_priority();
+    _borrowed_priority_synchronizer = nullptr;
 }
 
 __END_SYS
