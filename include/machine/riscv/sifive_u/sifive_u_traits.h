@@ -56,7 +56,7 @@ public:
 
     // Default Sizes and Quantities
     static const unsigned int MAX_THREADS       = 15;
-    static const unsigned int STACK_SIZE        = 16 * 1024;
+    static const unsigned int STACK_SIZE        = 32 * 1024;
     static const unsigned int HEAP_SIZE         = 4 * 1024 * 1024;
 };
 
@@ -95,8 +95,9 @@ template <> struct Traits<Timer>: public Traits<Machine_Common>
     // Meaningful values for the timer frequency range from 100 to 10000 Hz. The
     // choice must respect the scheduler time-slice, i. e., it must be higher
     // than the scheduler invocation frequency.
-    static const long FREQUENCY = 700; // Hz
-    static const long MAX_FREQUENCY = 5000; // Hz
+    static const long FREQUENCY = 3000; // Hz
+    static const long MAX_FREQUENCY = 4000; // Hz
+    // Esse números foram inferidos considerando o caso não ideal em que o debugger info está ligado
 };
 
 template <> struct Traits<UART>: public Traits<Machine_Common>

@@ -12,15 +12,20 @@ __BEGIN_SYS
 
 PLIC::Reg32 PLIC::_claimed;
 IC::Interrupt_Handler IC::_int_vector[IC::INTS];
-int IC::current_interruption_index = 0;
-UInt64 IC::totalSO = 0;
-UInt64 IC::total = 0;
+// PROFILE
+// int IC::current_interruption_index = 0;
+// UInt64 IC::totalSO = 0;
+// UInt64 IC::total = 0;
+// unsigned int IC::interruptions = 0;
 
 void IC::entry()
 {
     // Save context into the stack
     CPU::Context::push(true);
-    auto start = mtime();
+
+    // PROFILE
+    // auto start = mtime();
+    // IC::interruptions++;
 
     if(Traits<IC>::hysterically_debugged)
         print_context(true);
@@ -30,18 +35,24 @@ void IC::entry()
     if(Traits<IC>::hysterically_debugged)
         print_context(false);
 
-    if (IC::current_interruption_index == 0)
-        IC::totalSO = 0;
+    // ANNOTATION: Profile usado para a identificação da frequência ideal
+    // A cada n interrupções printa a porcentagem de tempo gasto tratando interrupções
+    // O cenário ideal seria rastrear o mtime da interrupção desde a função _int_m2s(), porém não foi possível
+    // Uma segunda métrica utilizada foi a quantia de interrupções ativas no sistema, para localizar os casos que em elas se sobrepõem
+    // if (IC::current_interruption_index == 0)
+    //     IC::totalSO = 0;
 
-    if (IC::current_interruption_index < IC::n_interruption - 1) {
-        IC::totalSO += (mtime() - start);
-        IC::current_interruption_index++;
-    } else {
-        auto end = mtime();
-        IC::totalSO += (end - start);
-        IC::total = end - IC::total;
-        IC::current_interruption_index = 0;
-    }
+    // if (IC::current_interruption_index < IC::n_interruption - 1) {
+    //     IC::totalSO += (mtime() - start);
+    //     IC::current_interruption_index++;
+    // } else {
+    //     auto end = mtime();
+    //     IC::totalSO += (end - start);
+    //     IC::total = end - IC::total;
+    //     IC::current_interruption_index = 0;
+    // }
+    // IC::interruptions--;
+
     // Restore context from the stack
     CPU::Context::pop(true);
     CPU::iret();    
@@ -51,8 +62,11 @@ void IC::entry()
 void IC::dispatch()
 {
     db<IC>(INF) << "\nIC::dispatch start -> mtime=" << mtime() <<" SP=" << CPU::sp() << " EPC=" << hex << CPU::epc() << endl;
-    if (IC::current_interruption_index == 0 && IC::total != 0)
-        db<IC>(INF) << "\n\tTempo do SO: " << IC::totalSO << "\n\tTempo total: " << IC::total << "\n\tPorcentagem: " << 100 * IC::totalSO / IC::total << endl;
+    // PROFILE
+    // if (IC::current_interruption_index == 0 && IC::total != 0)
+    //     db<IC>(INF) << "\n\tTempo do SO: " << IC::totalSO << "\n\tTempo total: " << IC::total << "\n\tPorcentagem: " << 100 * IC::totalSO / IC::total << endl;
+    // db<IC>(INF) << "\n\tInterrupções ativas: " << IC::interruptions << endl;
+    
     Interrupt_Id id = int_id();
 
     if((id != INT_SYS_TIMER) || Traits<IC>::hysterically_debugged)

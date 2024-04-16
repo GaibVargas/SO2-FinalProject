@@ -1,8 +1,9 @@
 .vscode
-img
+img/**
 app/*/**.o
 app/*/**[!.(cc | h)]
 tools/eposcc
 tools/eposcfg
 tools/eposmkbi
 !makefile
+!img/scheduler_llf_test.out
