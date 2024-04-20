@@ -24,7 +24,7 @@ void Mutex::lock()
     if(tsl(_locked))
         sleep();
     else
-        insert_thread(Thread::running()); // ANNOTATION: Pode dar ruim?
+        acquire_synchronyzer(Thread::running());
     end_atomic();
 }
 
@@ -36,7 +36,7 @@ void Mutex::unlock()
     begin_atomic();
     if(_queue.empty()) {
         _locked = false;
-        remove_thread(Thread::running());
+        release_synchronyzer(Thread::running());
     }
     else
         wakeup();

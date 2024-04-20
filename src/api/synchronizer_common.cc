@@ -5,14 +5,30 @@
 
 __BEGIN_SYS
 
-void Synchronizer_Common::insert_thread(Thread *t) {
-    auto link = new Thread_List_Element(t);
-    _running_queue.insert(link);
+void Synchronizer_Common::sleep() {
+    update_waiting_queue_priorities();
+    auto t = Thread::running();
+    if (!_queue.empty() && _queue.head()->object()->priority() < t->priority()) {
+        t = _queue.head()->object();
+    }  
+    pass_priority_to_threads(t);
+    Thread::sleep(&_queue);
+    acquire_synchronyzer(Thread::running());
 }
 
-void Synchronizer_Common::remove_thread(Thread *t) {
-    auto link = _running_queue.remove(t);
-    delete link;
+void Synchronizer_Common::acquire_synchronyzer(Thread *t) {
+    auto link_thread = new Thread_List_Element(t);
+    _running_queue.insert(link_thread);
+}
+
+void Synchronizer_Common::release_synchronyzer(Thread *t) {
+    auto link_running = _running_queue.remove(t);
+    delete link_running;
+
+    auto link_modified = _modified_threads.remove(t);
+    if (!link_modified) return;
+    delete link_modified;
+    set_next_priority(t);
 }
 
 void Synchronizer_Common::pass_priority_to_threads(Thread *t) {
@@ -26,13 +42,21 @@ void Synchronizer_Common::pass_priority_to_threads(Thread *t) {
                 prioritize_thread = i->object();
         }
     }
-    if (prioritize_thread)
-        prioritize_thread->analyze_borrowed_priority(t, this);
+    if (prioritize_thread) {
+        _modified_threads.insert(new Thread_List_Element(prioritize_thread));
+        prioritize_thread->set_borrowed_priority(t->priority());
+    }
+
 }
 
 void Synchronizer_Common::remove_all_lent_priorities() {
     for (auto i = _running_queue.begin(); i != _running_queue.end(); i++) {
-        i->object()->analyze_remove_borrowed_priority(this);
+        auto t = i->object(); 
+        t->remove_synchronizer(this);
+        if (_modified_threads.search(t)) {
+            t->remove_borrowed_priority();
+            set_next_priority(t);
+        }
     }
     for (auto i = _running_queue.begin(); i != _running_queue.end();) {
         auto next = i->next();
@@ -41,6 +65,44 @@ void Synchronizer_Common::remove_all_lent_priorities() {
     }
 }
 
+void Synchronizer_Common::set_next_priority(Thread *t) {
+    t->criterion().set_original_priority();
 
+    int highest_priority = t->priority();
+    Synchronizer_Common * from_sync = nullptr;
+
+    for (auto s = t->_synchronizers.begin(); s != t->_synchronizers.end(); s++) {
+        Synchronizer_Common *sync = s->object();
+        sync->update_waiting_queue_priorities();
+        Thread * t_sync = sync->get_head_waiting();
+        if (t_sync == nullptr) continue;
+
+        if (t_sync->priority() < highest_priority) {
+            highest_priority = t_sync->priority();
+            from_sync = sync;
+        }
+    }
+
+    if (highest_priority == t->priority()) return;
+    t->criterion().set_borrowed_priority(highest_priority);
+    from_sync->_modified_threads.insert(new Thread_List_Element(t));
+
+    if (t->state() == Thread::READY) {
+        t->_scheduler.remove(t);
+        t->_scheduler.insert(t);
+    }
+}
+
+void Synchronizer_Common::update_waiting_queue_priorities() {
+    for (auto i = _queue.begin(); i != _queue.end(); i++) {
+        i->object()->criterion().update_priority();
+    }
+}
+
+Thread* Synchronizer_Common::get_head_waiting() {
+    auto element = _queue.head();
+    if (!element) return nullptr;
+    return element->object();
+}
 
 __END_SYS

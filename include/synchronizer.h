@@ -12,6 +12,7 @@ __BEGIN_SYS
 
 class Synchronizer_Common
 {
+    friend class Thread;
 protected:
     typedef Thread::Queue Queue;
     typedef List<Thread> Thread_List;
@@ -35,26 +36,25 @@ protected:
     void begin_atomic() { Thread::lock(); }
     void end_atomic() { Thread::unlock(); }
 
-    void sleep() {
-        pass_priority_to_threads(Thread::running());
-        Thread::sleep(&_queue);
-        insert_thread(Thread::running()); // ANNOTATION: Pode dar ruim?
-    }
+    void sleep();
     void wakeup() {
-        Thread::running()->analyze_remove_borrowed_priority(this); 
-        remove_thread(Thread::running());
+        release_synchronyzer(Thread::running());
         Thread::wakeup(&_queue); 
     }
     void wakeup_all() { Thread::wakeup_all(&_queue); }
 
-    void insert_thread(Thread * t);
-    void remove_thread(Thread * t);
+    void acquire_synchronyzer(Thread * t);
+    void release_synchronyzer(Thread * t);
+    void set_next_priority(Thread * t);
     void pass_priority_to_threads(Thread * t);
     void remove_all_lent_priorities();
+    void update_waiting_queue_priorities();
+    Thread* get_head_waiting();
 
 protected:
     Queue _queue;
     Thread_List _running_queue;
+    Thread_List _modified_threads;
 };
 
 

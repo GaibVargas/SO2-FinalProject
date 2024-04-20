@@ -24,7 +24,7 @@ void Semaphore::p()
     if(fdec(_value) < 1)
         sleep();
     else
-        insert_thread(Thread::running()); // ANNOTATION: Pode dar ruim?
+        acquire_synchronyzer(Thread::running()); // ANNOTATION: Pode dar ruim?
     end_atomic();
 }
 
