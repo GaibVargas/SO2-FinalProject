@@ -150,6 +150,7 @@ protected:
     Synchronizer_List _synchronizers;
     Synchronizer_Thread_List _synchronizer_running_queue;
     Synchronizer_Thread_List _synchronizer_modified_queue;
+
     static bool _not_booting;
     static volatile unsigned int _thread_count;
     static Scheduler_Timer * _timer;

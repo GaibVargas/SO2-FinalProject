@@ -61,13 +61,6 @@ Thread::~Thread()
     // The running thread cannot delete itself!
     assert(_state != RUNNING);
 
-    for(auto running = _synchronizer_running_queue.begin(); running != _synchronizer_running_queue.end(); running++) {
-        running->object()->remove(this);
-    }
-    for(auto modified = _synchronizer_modified_queue.begin(); modified != _synchronizer_modified_queue.end(); modified++) {
-        modified->object()->remove(this);
-    }
-
     switch(_state) {
     case RUNNING:  // For switch completion only: the running thread would have deleted itself! Stack wouldn't have been released!
         exit(-1);
@@ -89,6 +82,19 @@ Thread::~Thread()
         break;
     case FINISHING: // Already called exit()
         break;
+    }
+
+    for (auto i = _synchronizer_running_queue.begin(); i != _synchronizer_running_queue.end();) {
+        i->object()->remove(this);
+        auto next = i->next();
+        delete i;
+        i = next;
+    }
+    for (auto i = _synchronizer_modified_queue.begin(); i != _synchronizer_modified_queue.end();) {
+        i->object()->remove(this);
+        auto next = i->next();
+        delete i;
+        i = next;
     }
 
     if(_joining)

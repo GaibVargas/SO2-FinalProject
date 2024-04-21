@@ -74,6 +74,11 @@ void Synchronizer_Common::remove_all_lent_priorities() {
         delete i;
         i = next;
     }
+    for (auto i = _modified_threads.begin(); i != _modified_threads.end();) {
+        auto next = i->next();
+        delete i;
+        i = next;
+    }
 }
 
 void Synchronizer_Common::set_next_priority(Thread *t) {
