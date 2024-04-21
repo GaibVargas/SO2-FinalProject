@@ -5,7 +5,7 @@
 
 using namespace EPOS;
 
-const unsigned int iterations = 1;
+const unsigned int iterations = 2;
 const unsigned int period_l = 200; // ms
 const unsigned int period_ml = 175; // ms
 const unsigned int period_m = 150; // ms

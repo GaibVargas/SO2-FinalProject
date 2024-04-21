@@ -61,6 +61,13 @@ Thread::~Thread()
     // The running thread cannot delete itself!
     assert(_state != RUNNING);
 
+    for(auto running = _synchronizer_running_queue.begin(); running != _synchronizer_running_queue.end(); running++) {
+        running->object()->remove(this);
+    }
+    for(auto modified = _synchronizer_modified_queue.begin(); modified != _synchronizer_modified_queue.end(); modified++) {
+        modified->object()->remove(this);
+    }
+
     switch(_state) {
     case RUNNING:  // For switch completion only: the running thread would have deleted itself! Stack wouldn't have been released!
         exit(-1);
@@ -450,6 +457,26 @@ void Thread::insert_synchronizer(Synchronizer_Common *s) {
 
 void Thread::remove_synchronizer(Synchronizer_Common *s) {
     auto link = _synchronizers.remove(s);
+    delete link;
+}
+
+void Thread::insert_synchronizer_running_queue(List<Thread> *q) {
+    auto link = new Synchronizer_Thread_List_Element(q);
+    _synchronizer_running_queue.insert_head(link);
+}
+
+void Thread::remove_synchronizer_running_queue(List<Thread> *q) {
+    auto link = _synchronizer_running_queue.remove(q);
+    delete link;
+}
+
+void Thread::insert_synchronizer_modified_queue(List<Thread> *q) {
+    auto link = new Synchronizer_Thread_List_Element(q);
+    _synchronizer_modified_queue.insert_head(link);
+}
+
+void Thread::remove_synchronizer_modified_queue(List<Thread> *q) {
+    auto link = _synchronizer_modified_queue.remove(q);
     delete link;
 }
 

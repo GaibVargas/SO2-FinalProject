@@ -10,7 +10,7 @@ void Synchronizer_Common::sleep() {
     auto t = Thread::running();
     if (!_queue.empty() && _queue.head()->object()->priority() < t->priority()) {
         t = _queue.head()->object();
-    }  
+    }
     pass_priority_to_threads(t);
     Thread::sleep(&_queue);
     acquire_synchronyzer(Thread::running());
@@ -19,15 +19,22 @@ void Synchronizer_Common::sleep() {
 void Synchronizer_Common::acquire_synchronyzer(Thread *t) {
     auto link_thread = new Thread_List_Element(t);
     _running_queue.insert(link_thread);
+
+    t->insert_synchronizer(this);
+    t->insert_synchronizer_running_queue(&_running_queue);
 }
 
 void Synchronizer_Common::release_synchronyzer(Thread *t) {
+    t->remove_synchronizer_running_queue(&_running_queue);
+    t->remove_synchronizer(this);
+
     auto link_running = _running_queue.remove(t);
     delete link_running;
 
     auto link_modified = _modified_threads.remove(t);
     if (!link_modified) return;
     delete link_modified;
+    t->remove_synchronizer_modified_queue(&_modified_threads);
     set_next_priority(t);
 }
 
@@ -44,6 +51,7 @@ void Synchronizer_Common::pass_priority_to_threads(Thread *t) {
     }
     if (prioritize_thread) {
         _modified_threads.insert(new Thread_List_Element(prioritize_thread));
+        prioritize_thread->insert_synchronizer_modified_queue(&_modified_threads);
         prioritize_thread->set_borrowed_priority(t->priority());
     }
 
@@ -53,8 +61,11 @@ void Synchronizer_Common::remove_all_lent_priorities() {
     for (auto i = _running_queue.begin(); i != _running_queue.end(); i++) {
         auto t = i->object(); 
         t->remove_synchronizer(this);
+        t->remove_synchronizer_running_queue(&_running_queue);
+
         if (_modified_threads.search(t)) {
             t->remove_borrowed_priority();
+            t->remove_synchronizer_modified_queue(&_modified_threads);
             set_next_priority(t);
         }
     }
@@ -86,6 +97,7 @@ void Synchronizer_Common::set_next_priority(Thread *t) {
     if (highest_priority == t->priority()) return;
     t->criterion().set_borrowed_priority(highest_priority);
     from_sync->_modified_threads.insert(new Thread_List_Element(t));
+    t->insert_synchronizer_modified_queue(&from_sync->_modified_threads);
 
     if (t->state() == Thread::READY) {
         t->_scheduler.remove(t);
