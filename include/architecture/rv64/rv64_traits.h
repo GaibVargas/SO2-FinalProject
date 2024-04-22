@@ -18,6 +18,8 @@ template<> struct Traits<CPU>: public Traits<Build>
 
 template<> struct Traits<MMU>: public Traits<Build>
 {
+    //ANNOTATION: Descomentar linha abaixo
+    // static const bool enabled = false;
     static const bool colorful = false;
     static const unsigned int COLORS = 1;
 };

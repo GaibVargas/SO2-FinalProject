@@ -33,7 +33,8 @@ public:
             if(!heap)
                 db<Init>(ERR) << "Failed to initialize the system's heap!" << endl;
             System::_heap = new (&System::_preheap[sizeof(Segment)]) Heap(heap, System::_heap_segment->size());
-        } else
+        } 
+            //ANNOTATION: Será que é a MMU que tem que alocar alguma coisa?
             System::_heap = new (&System::_preheap[0]) Heap(MMU::alloc(MMU::pages(HEAP_SIZE)), HEAP_SIZE);
 
         db<Init>(INF) << "Initializing the machine: " << endl;

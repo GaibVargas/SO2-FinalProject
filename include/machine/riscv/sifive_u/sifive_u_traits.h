@@ -21,10 +21,11 @@ public:
     static const unsigned long NOT_USED         = -1UL;
 
     // RISC-V mode for library
-    static const bool supervisor = true;                                                        // Run EPOS library in supervisor mode
+    static const bool supervisor = false;                                                        // Run EPOS library in supervisor mode
 
     // CPU numbering
-    static const unsigned long CPU_OFFSET       = supervisor ? 1 : 0;                           // We skip core zero, which is a E CPU without MMU
+    // ANNOTATION: Olhar se não é necessário apenas não dar halt na CPU 0
+    static const unsigned long CPU_OFFSET       = 1;                           // We skip core zero, which is a E CPU without MMU
 
     // Clocks
     static const unsigned long CLOCK            = 1000000000;                                   // CORECLK
@@ -95,8 +96,8 @@ template <> struct Traits<Timer>: public Traits<Machine_Common>
     // Meaningful values for the timer frequency range from 100 to 10000 Hz. The
     // choice must respect the scheduler time-slice, i. e., it must be higher
     // than the scheduler invocation frequency.
-    static const long FREQUENCY = 3000; // Hz
-    static const long MAX_FREQUENCY = 4000; // Hz
+    static const long FREQUENCY = 10000; // Hz
+    static const long MAX_FREQUENCY = 11000; // Hz
     // Esse números foram inferidos considerando o caso não ideal em que o debugger info está ligado
 };
 

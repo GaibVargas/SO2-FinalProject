@@ -123,7 +123,9 @@ Setup::Setup()
     setup_flat_paging();
 
     // Relocate the machine to supervisor interrupt forwarder
-    setup_m2s();
+    // ANNOTATION: Criava um repassador de interrupções de tempo para o supervisor mode
+    // Como o "CPU::mtvec(CPU::INT_DIRECT, Memory_Map::INT_M2S)" não é mais chamado, as interrupções não são mais direcionadas para essa pagina
+    // setup_m2s();
 
     // Enable paging
     enable_paging();
@@ -671,19 +673,22 @@ void _entry() // machine mode
 
     CPU::mstatusc(CPU::MIE);                            // disable interrupts (they will be reenabled at Init_End)
 
+    //ANNOTATION: Não precisa mais ignorar o core 0
     CPU::tp(CPU::mhartid() - 1);                        // tp will be CPU::id() for supervisor mode; we won't count core 0, which is an heterogeneous E51
     CPU::sp(Memory_Map::BOOT_STACK + Traits<Machine>::STACK_SIZE - sizeof(long)); // set the stack pointer, thus creating a stack for SETUP
 
     Machine::clear_bss();
 
-    CPU::mtvec(CPU::INT_DIRECT, Memory_Map::INT_M2S);   // setup a machine mode interrupt handler to forward timer interrupts (which cannot be delegated via mideleg)
-    CPU::mideleg(CPU::SSI | CPU::STI | CPU::SEI);       // delegate supervisor interrupts to supervisor mode
-    CPU::medeleg(0xf1ff);                               // delegate all exceptions to supervisor mode but ecalls
+    // CPU::mtvec(CPU::INT_DIRECT, Memory_Map::INT_M2S);   // setup a machine mode interrupt handler to forward timer interrupts (which cannot be delegated via mideleg)
+    // CPU::mideleg(CPU::SSI | CPU::STI | CPU::SEI);       // delegate supervisor interrupts to supervisor mode
+    // CPU::medeleg(0xf1ff);                               // delegate all exceptions to supervisor mode but ecalls 
     CPU::mie(CPU::MSI | CPU::MTI | CPU::MEI);           // enable interrupt generation by at machine level before going into supervisor mode
     CLINT::mtimecmp(-1ULL);                             // configure MTIMECMP so it won't trigger a timer interrupt before we can setup_m2s()
-    CPU::mstatus(CPU::MPP_S | CPU::MPIE | CPU::MXR);    // prepare jump into supervisor mode at MRET with interrupts enabled at machine level
-    CPU::mstatusc(CPU::SIE);                            // disable interrupts (they will be reenabled at Init_End)
-    CPU::sstatuss(CPU::SUM);                            // allows User Memory access in supervisor mode
+    // ANNOTATION: Tiramos o CPU::MPIE que habilita as interrupções em modo machine
+    CPU::mstatus(CPU::MPP_M | CPU::MXR);    // prepare jump into supervisor mode at MRET with interrupts enabled at machine level
+    // ANNOTATION: Desabilitamos as interrupções em modo machine
+    CPU::mstatusc(CPU::MIE);                            // disable interrupts (they will be reenabled at Init_End)
+    // CPU::sstatuss(CPU::SUM);                            // allows User Memory access in supervisor mode
 
     CPU::pmpcfg0(0b11111); 				// configure PMP region 0 as (L=unlocked [0], [00], A = NAPOT [11], X [1], W [1], R [1])
     CPU::pmpaddr0((1ULL << MMU::LA_BITS) - 1);          // comprising the whole memory space
@@ -702,6 +707,7 @@ void _setup() // supervisor mode
 
 // RISC-V's CLINT triggers interrupt 7 (MTI) whenever MTIME == MTIMECMP and there is no way to instruct it to trigger interrupt 9 (STI). So, even if we delegate all interrupts with MIDELEG, MTI doesn't turn into STI and MTI is visible in SIP. In other words, MTI must always be handled in machine mode, although the OS will run in supervisor mode.
 // Therefore, an interrupt forwarder must be installed in machine mode to catch MTI and manually trigger STI. We use RAM_TOP for this, with the code at the beginning of the last page and per-core 256 bytes stacks at the end of the same page.
+// ANNOTATION: Não é mais usado pois não existe mais o modo supervisor que utilizava este metodo para repassar interrupções de tempo
 void _int_m2s()
 {
     // Save context
@@ -729,7 +735,6 @@ if(Traits<CPU>::WORD_SIZE == 32) {
 }
 
     CPU::Reg id = CPU::mcause();
-    // ANNOTATION: redirecionamento da exceção de tempo
     if((id & CLINT::INT_MASK) == CLINT::IRQ_MAC_TIMER) {
         Timer::reset();                                 // MIP.MTI is a direct logic on (MTIME == MTIMECMP) and reseting the Timer (i.e. adjusting MTIMECMP) seems to be the only way to clear it
         CPU::mips(CPU::STI);                            // forward desired interrupts to supervisor mode
