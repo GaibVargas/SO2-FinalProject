@@ -31,6 +31,8 @@ class SV39_MMU;
 class Setup
 {
 private:
+    static const bool supervisor = Traits<Machine>::supervisor;
+
     // Physical memory map
     static const unsigned long RAM_BASE         = Memory_Map::RAM_BASE;
     static const unsigned long RAM_TOP          = Memory_Map::RAM_TOP;
@@ -123,9 +125,10 @@ Setup::Setup()
     setup_flat_paging();
 
     // Relocate the machine to supervisor interrupt forwarder
-    // ANNOTATION: Criava um repassador de interrupções de tempo para o supervisor mode
-    // Como o "CPU::mtvec(CPU::INT_DIRECT, Memory_Map::INT_M2S)" não é mais chamado, as interrupções não são mais direcionadas para essa pagina
-    // setup_m2s();
+    // ANNOTATION: Cria um repassador de interrupções de tempo para o supervisor mode
+    // Como o "CPU::mtvec(CPU::INT_DIRECT, Memory_Map::INT_M2S)" não é mais chamado, as interrupções não são mais redirecionadas em machine mode
+    if (supervisor)
+        setup_m2s();
 
     // Enable paging
     enable_paging();
@@ -534,6 +537,7 @@ void Setup::enable_paging()
         db<Setup>(INF) << "Setup::sp=" << CPU::sp() << endl;
     }
 
+    // ANNOTATION: desligar as traduções de endereço podem ser feitas provavelmente aqui
     // Set SATP and enable paging
     MMU::pd(FLAT_MEM_MAP);
 
@@ -667,6 +671,7 @@ using namespace EPOS::S;
 void _entry() // machine mode
 {
     typedef IF<Traits<CPU>::WORD_SIZE == 32, SV32_MMU, SV39_MMU>::Result MMU; // architecture.h will use No_MMU if multitasking is disable, but we need the correct MMU for the Flat Memory Model.
+    static const bool supervisor = Traits<Machine>::supervisor;
 
     if(CPU::mhartid() == 0)                             // SiFive-U has 2 cores, but core 0 (an E51) does not feature an MMU, so we halt it and let core 1 (an U54) run in a single-core configuration
         CPU::halt();
@@ -679,16 +684,21 @@ void _entry() // machine mode
 
     Machine::clear_bss();
 
-    // CPU::mtvec(CPU::INT_DIRECT, Memory_Map::INT_M2S);   // setup a machine mode interrupt handler to forward timer interrupts (which cannot be delegated via mideleg)
-    // CPU::mideleg(CPU::SSI | CPU::STI | CPU::SEI);       // delegate supervisor interrupts to supervisor mode
-    // CPU::medeleg(0xf1ff);                               // delegate all exceptions to supervisor mode but ecalls 
-    CPU::mie(CPU::MSI | CPU::MTI | CPU::MEI);           // enable interrupt generation by at machine level before going into supervisor mode
+    if (supervisor) {
+        CPU::mtvec(CPU::INT_DIRECT, Memory_Map::INT_M2S);   // setup a machine mode interrupt handler to forward timer interrupts (which cannot be delegated via mideleg)
+        CPU::mideleg(CPU::SSI | CPU::STI | CPU::SEI);       // delegate supervisor interrupts to supervisor mode
+        CPU::medeleg(0xf1ff);                               // delegate all exceptions to supervisor mode but ecalls 
+        CPU::mstatus(CPU::MPP_S | CPU::MPIE | CPU::MXR);    // prepare jump into supervisor mode at MRET with interrupts enabled at machine level
+        CPU::mstatusc(CPU::SIE);                            // disable interrupts (they will be reenabled at Init_End)
+        CPU::sstatuss(CPU::SUM);                            // allows User Memory access in supervisor mode
+    } else {
+        // ANNOTATION: 
+        // Retira-se o CPU::MPIE que habilita as interrupções em modo machine
+        CPU::mstatus(CPU::MPP_M | CPU::MXR);    // prepare jump into machine mode at MRET with interrupts disabled at machine level
+    }
+
+    CPU::mie(CPU::MSI | CPU::MTI | CPU::MEI);           // enable interrupt generation by at machine level before going into next mode
     CLINT::mtimecmp(-1ULL);                             // configure MTIMECMP so it won't trigger a timer interrupt before we can setup_m2s()
-    // ANNOTATION: Tiramos o CPU::MPIE que habilita as interrupções em modo machine
-    CPU::mstatus(CPU::MPP_M | CPU::MXR);    // prepare jump into supervisor mode at MRET with interrupts enabled at machine level
-    // ANNOTATION: Desabilitamos as interrupções em modo machine
-    CPU::mstatusc(CPU::MIE);                            // disable interrupts (they will be reenabled at Init_End)
-    // CPU::sstatuss(CPU::SUM);                            // allows User Memory access in supervisor mode
 
     CPU::pmpcfg0(0b11111); 				// configure PMP region 0 as (L=unlocked [0], [00], A = NAPOT [11], X [1], W [1], R [1])
     CPU::pmpaddr0((1ULL << MMU::LA_BITS) - 1);          // comprising the whole memory space
@@ -707,7 +717,7 @@ void _setup() // supervisor mode
 
 // RISC-V's CLINT triggers interrupt 7 (MTI) whenever MTIME == MTIMECMP and there is no way to instruct it to trigger interrupt 9 (STI). So, even if we delegate all interrupts with MIDELEG, MTI doesn't turn into STI and MTI is visible in SIP. In other words, MTI must always be handled in machine mode, although the OS will run in supervisor mode.
 // Therefore, an interrupt forwarder must be installed in machine mode to catch MTI and manually trigger STI. We use RAM_TOP for this, with the code at the beginning of the last page and per-core 256 bytes stacks at the end of the same page.
-// ANNOTATION: Não é mais usado pois não existe mais o modo supervisor que utilizava este metodo para repassar interrupções de tempo
+// ANNOTATION: Não é usado em machine mode
 void _int_m2s()
 {
     // Save context
