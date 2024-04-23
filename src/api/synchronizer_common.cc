@@ -50,11 +50,12 @@ void Synchronizer_Common::pass_priority_to_threads(Thread *t) {
         }
     }
     if (prioritize_thread) {
-        _modified_threads.insert(new Thread_List_Element(prioritize_thread));
-        prioritize_thread->insert_synchronizer_modified_queue(&_modified_threads);
         prioritize_thread->set_borrowed_priority(t->priority());
+        if (!_modified_threads.search(prioritize_thread)) {
+            _modified_threads.insert(new Thread_List_Element(prioritize_thread));
+            prioritize_thread->insert_synchronizer_modified_queue(&_modified_threads);
+        }
     }
-
 }
 
 void Synchronizer_Common::remove_all_lent_priorities() {
@@ -101,8 +102,10 @@ void Synchronizer_Common::set_next_priority(Thread *t) {
 
     if (highest_priority == t->priority()) return;
     t->criterion().set_borrowed_priority(highest_priority);
-    from_sync->_modified_threads.insert(new Thread_List_Element(t));
-    t->insert_synchronizer_modified_queue(&from_sync->_modified_threads);
+    if (!from_sync->_modified_threads.search(t)) {
+        from_sync->_modified_threads.insert(new Thread_List_Element(t));
+        t->insert_synchronizer_modified_queue(&from_sync->_modified_threads);
+    }
 
     if (t->state() == Thread::READY) {
         t->_scheduler.remove(t);

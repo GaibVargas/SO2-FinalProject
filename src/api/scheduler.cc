@@ -12,7 +12,7 @@ Real_Time_Scheduler_Common::Real_Time_Scheduler_Common(int i, const Microsecond 
 
 void Real_Time_Scheduler_Common::set_borrowed_priority(int p) {
     _using_borrowed_priority = true;
-    _priority = p;
+    _priority = Traits<Thread>::priority_inversion_protocol == Traits<Build>::INHERITANCE ? p : HIGHEST;
 }
 
 void Real_Time_Scheduler_Common::set_original_priority() {
