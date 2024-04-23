@@ -58,7 +58,7 @@ public:
         IO              = Traits<Machine>::IO,
 
         SYS             = Traits<Machine>::SYS,
-        // ANNOTATION: Olhar direito pra esse sys code em caso de usar Builtin ou Kernel
+
         SYS_CODE        = NOT_USED,
         SYS_INFO        = NOT_USED,
         SYS_PT          = NOT_USED,
