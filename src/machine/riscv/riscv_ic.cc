@@ -74,7 +74,6 @@ void IC::dispatch()
             db<IC>(INF) << "\n\tTempo do SO: " << IC::totalSO << "\n\tTempo total: " << IC::total << "\n\tPorcentagem: " << 100 * IC::totalSO / IC::total << endl;
         db<IC>(INF) << "\n\tInterrupções ativas: " << IC::interruptions << endl;    
     }
-    
     Interrupt_Id id = int_id();
 
     if((id != INT_SYS_TIMER) || Traits<IC>::hysterically_debugged)

@@ -22,11 +22,10 @@ public:
 
     // RISC-V mode for library
     static const bool supervisor = false;                                                        // Run EPOS library in supervisor mode
+    static const bool paging = false;
 
     // CPU numbering
-    // ANNOTATION: Olhar se não é necessário apenas não dar halt na CPU 0
     static const unsigned long CPU_OFFSET       = 1;                         // We skip core zero, which is a E CPU without MMU
-    // static const unsigned long CPU_OFFSET       = supervisor ? 1 : 0;                         // We skip core zero, which is a E CPU without MMU
 
     // Clocks
     static const unsigned long CLOCK            = 1000000000;                                   // CORECLK

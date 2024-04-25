@@ -32,6 +32,7 @@ class Setup
 {
 private:
     static const bool supervisor = Traits<Machine>::supervisor;
+    static const bool paging = Traits<Machine>::paging;
 
     // Physical memory map
     static const unsigned long RAM_BASE         = Memory_Map::RAM_BASE;
@@ -122,16 +123,18 @@ Setup::Setup()
     say_hi();
 
     // Configure a flat memory model for the single task in the system
-    setup_flat_paging();
+    if (paging)
+        setup_flat_paging();
 
     // Relocate the machine to supervisor interrupt forwarder
-    // ANNOTATION: Cria um repassador de interrupções de tempo para o supervisor mode
-    // Como o "CPU::mtvec(CPU::INT_DIRECT, Memory_Map::INT_M2S)" não é mais chamado, as interrupções não são mais redirecionadas em machine mode
     if (supervisor)
         setup_m2s();
 
     // Enable paging
-    enable_paging();
+    if (paging)
+        enable_paging();
+    else
+        CPU::satp(0);
 
     if (Traits<Timer>::FREQUENCY > Traits<Timer>::MAX_FREQUENCY) {
         kout << "Frequência muito alta.";
@@ -678,7 +681,6 @@ void _entry() // machine mode
 
     CPU::mstatusc(CPU::MIE);                            // disable interrupts (they will be reenabled at Init_End)
 
-    //ANNOTATION: Não precisa mais ignorar o core 0
     CPU::tp(CPU::mhartid() - 1);                        // tp will be CPU::id() for supervisor mode; we won't count core 0, which is an heterogeneous E51
     CPU::sp(Memory_Map::BOOT_STACK + Traits<Machine>::STACK_SIZE - sizeof(long)); // set the stack pointer, thus creating a stack for SETUP
 
