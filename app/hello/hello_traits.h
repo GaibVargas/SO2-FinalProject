@@ -63,6 +63,7 @@ template<> struct Traits<Boot>: public Traits<Build>
 
 template<> struct Traits<Setup>: public Traits<Build>
 {
+    static const bool info = false;
 };
 
 template<> struct Traits<Init>: public Traits<Build>
@@ -115,6 +116,7 @@ template<> struct Traits<Thread>: public Traits<Build>
     static const bool enabled = Traits<System>::multithread;
     static const bool trace_idle = hysterically_debugged;
     static const bool simulate_capacity = false;
+    static const int priority_inversion_protocol = INHERITANCE;
 
     typedef LLF Criterion;
     static const unsigned int QUANTUM = 10000; // us

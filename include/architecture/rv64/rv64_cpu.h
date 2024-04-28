@@ -228,7 +228,8 @@ public:
     static Log_Addr fr() { Reg r; ASM("mv %0, a0" :  "=r"(r)); return r; }
     static void fr(Reg r) {       ASM("mv a0, %0" : : "r"(r) :); }
 
-    static unsigned int id() { return supervisor ? tp() : 0; }
+    //ANNOTATION: O core 0 nunca é usado, e o valor de tp é configurado no setup
+    static unsigned int id() { return tp(); }
     static unsigned int cores() { return 1; }
 
     using CPU_Common::clock;

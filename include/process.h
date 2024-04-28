@@ -13,7 +13,6 @@ extern "C" { void __exit(); }
 
 __BEGIN_SYS
 
-//ANNOTATION: Resolve dependência circular
 class Synchronizer_Common;
 class Thread
 {
@@ -26,6 +25,12 @@ class Thread
     friend class IC;                    // for link() for priority ceiling
     friend class Mutex;
     friend class Semaphore;
+
+    typedef List<Synchronizer_Common> Synchronizer_List;
+    typedef List<Synchronizer_Common>::Element Synchronizer_List_Element;
+
+    typedef List<List<Thread>> Synchronizer_Thread_List;
+    typedef List<List<Thread>>::Element Synchronizer_Thread_List_Element;
 
 protected:
     static const bool preemptive = Traits<Thread>::Criterion::preemptive;
@@ -54,6 +59,7 @@ public:
         ISR     = Criterion::ISR,
         HIGH    = Criterion::HIGH,
         NORMAL  = Criterion::NORMAL,
+        HIGHEST = Criterion::HIGHEST,
         LOW     = Criterion::LOW,
         MAIN    = Criterion::MAIN,
         IDLE    = Criterion::IDLE
@@ -120,8 +126,15 @@ protected:
 
     static int idle();
 
-    void analyze_borrowed_priority(Thread *t, Synchronizer_Common *s);
-    void analyze_remove_borrowed_priority(Synchronizer_Common *s);
+    void set_borrowed_priority(int p = HIGHEST);
+    void remove_borrowed_priority();
+    void insert_synchronizer(Synchronizer_Common *s);
+    void remove_synchronizer(Synchronizer_Common *s);
+
+    void insert_synchronizer_running_queue(List<Thread> *q);
+    void remove_synchronizer_running_queue(List<Thread> *q);
+    void insert_synchronizer_modified_queue(List<Thread> *q);
+    void remove_synchronizer_modified_queue(List<Thread> *q);
 
 private:
     static void init();
@@ -134,7 +147,16 @@ protected:
     Thread * volatile _joining;
     Queue::Element _link;
 
-    Synchronizer_Common * _borrowed_priority_synchronizer = nullptr;
+    // Lista de sincronizadores usada na função Synchronizer_Common::set_next_priority(Thread *t).
+    // Sua função é tratar o aninhamento de sincronizadores.
+    Synchronizer_List _synchronizers;
+
+    // Lista de listas de threads dos sincronizadores.
+    // O objetivo dessa lista é permitir que a thread se auto remova da lista caso seja destruída, 
+    // evitando vazamento de memória.
+    Synchronizer_Thread_List _synchronizer_running_queue;
+    Synchronizer_Thread_List _synchronizer_modified_queue;
+
     static bool _not_booting;
     static volatile unsigned int _thread_count;
     static Scheduler_Timer * _timer;

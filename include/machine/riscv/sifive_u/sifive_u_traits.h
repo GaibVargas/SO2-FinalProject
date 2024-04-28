@@ -20,11 +20,14 @@ public:
     // Value to be used for undefined addresses
     static const unsigned long NOT_USED         = -1UL;
 
-    // RISC-V mode for library
-    static const bool supervisor = true;                                                        // Run EPOS library in supervisor mode
+    // RISC-V mode
+    static const bool supervisor = false;                                                        // Run EPOS library in supervisor mode
+    // Configura a paginação da MMU
+    static const bool paging = false;
 
     // CPU numbering
-    static const unsigned long CPU_OFFSET       = supervisor ? 1 : 0;                           // We skip core zero, which is a E CPU without MMU
+    // O core E51 sempre é desligado
+    static const unsigned long CPU_OFFSET       = 1;                         // We skip core zero, which is a E CPU without MMU
 
     // Clocks
     static const unsigned long CLOCK            = 1000000000;                                   // CORECLK
@@ -62,8 +65,9 @@ public:
 
 template <> struct Traits<IC>: public Traits<Machine_Common>
 {
-    static const bool hysterically_debugged = true; // ANNOTATION: debugger do IC ligado
+    static const bool hysterically_debugged = false;
     static const bool debugged = hysterically_debugged;
+    static const bool profiling = false;
 
     static const unsigned int PLIC_IRQS = 54;           // IRQ0 is used by PLIC to signalize that there is no interrupt being serviced or pending
 
@@ -95,8 +99,8 @@ template <> struct Traits<Timer>: public Traits<Machine_Common>
     // Meaningful values for the timer frequency range from 100 to 10000 Hz. The
     // choice must respect the scheduler time-slice, i. e., it must be higher
     // than the scheduler invocation frequency.
-    static const long FREQUENCY = 3000; // Hz
-    static const long MAX_FREQUENCY = 4000; // Hz
+    static const long FREQUENCY = 2000; // Hz
+    static const long MAX_FREQUENCY = 11000; // Hz
     // Esse números foram inferidos considerando o caso não ideal em que o debugger info está ligado
 };
 

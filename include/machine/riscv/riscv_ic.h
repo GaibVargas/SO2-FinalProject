@@ -140,11 +140,11 @@ private:
     static const bool supervisor = Traits<Machine>::supervisor;
 
     // PROFILE
-    // static const int n_interruption = 10;
-    // static int current_interruption_index;
-    // static UInt64 totalSO;
-    // static UInt64 total;
-    // static unsigned int interruptions;
+    static const int n_interruption = 10;
+    static int current_interruption_index;
+    static UInt64 totalSO;
+    static UInt64 total;
+    static unsigned int interruptions;
 
 public:
     static const unsigned int EXCS = CPU::EXCEPTIONS;

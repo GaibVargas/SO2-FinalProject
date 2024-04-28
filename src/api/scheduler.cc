@@ -10,9 +10,9 @@ Real_Time_Scheduler_Common::Real_Time_Scheduler_Common(int i, const Microsecond 
         _absolute_deadline = Alarm::elapsed() + _deadline;
     }
 
-void Real_Time_Scheduler_Common::set_borrowed_priority() {
+void Real_Time_Scheduler_Common::set_borrowed_priority(int p) {
     _using_borrowed_priority = true;
-    _priority = HIGHEST;
+    _priority = Traits<Thread>::priority_inversion_protocol == Traits<Build>::INHERITANCE ? p : HIGHEST;
 }
 
 void Real_Time_Scheduler_Common::set_original_priority() {

@@ -84,6 +84,19 @@ Thread::~Thread()
         break;
     }
 
+    for (auto i = _synchronizer_running_queue.begin(); i != _synchronizer_running_queue.end();) {
+        i->object()->remove(this);
+        auto next = i->next();
+        delete i;
+        i = next;
+    }
+    for (auto i = _synchronizer_modified_queue.begin(); i != _synchronizer_modified_queue.end();) {
+        i->object()->remove(this);
+        auto next = i->next();
+        delete i;
+        i = next;
+    }
+
     if(_joining)
         _joining->resume();
 
@@ -399,7 +412,6 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 int Thread::idle()
 {
     db<Thread>(TRC) << "Thread::idle(this=" << running() << ")" << endl;
-    
     while(_thread_count > 1) { // someone else besides idle
         if(Traits<Thread>::trace_idle)
             db<Thread>(TRC) << "Thread::idle(this=" << running() << ")" << endl;
@@ -427,20 +439,50 @@ int Thread::idle()
     return 0;
 }
 
-void Thread::analyze_borrowed_priority(Thread *t, Synchronizer_Common *s) {
-    assert(locked());
-    if (t->priority() >= priority()) return;
-    _borrowed_priority_synchronizer = s;
-    _scheduler.remove(this);
-    criterion().set_borrowed_priority();
-    _scheduler.insert(this);
+void Thread::set_borrowed_priority(int p) {
+    criterion().set_borrowed_priority(p);
+    if (state() == READY) {
+        _scheduler.remove(this);
+        _scheduler.insert(this);
+    }
 }
 
-// Chamada pela running ao sair de uma região crítica
-void Thread::analyze_remove_borrowed_priority(Synchronizer_Common *s) {
-    if (s != _borrowed_priority_synchronizer) return;
+void Thread::remove_borrowed_priority() {
     criterion().set_original_priority();
-    _borrowed_priority_synchronizer = nullptr;
+    if (state() == READY) {
+        _scheduler.remove(this);
+        _scheduler.insert(this);
+    }
+}
+
+void Thread::insert_synchronizer(Synchronizer_Common *s) {
+    auto link = new Synchronizer_List_Element(s);
+    _synchronizers.insert_head(link);
+}
+
+void Thread::remove_synchronizer(Synchronizer_Common *s) {
+    auto link = _synchronizers.remove(s);
+    delete link;
+}
+
+void Thread::insert_synchronizer_running_queue(List<Thread> *q) {
+    auto link = new Synchronizer_Thread_List_Element(q);
+    _synchronizer_running_queue.insert_head(link);
+}
+
+void Thread::remove_synchronizer_running_queue(List<Thread> *q) {
+    auto link = _synchronizer_running_queue.remove(q);
+    delete link;
+}
+
+void Thread::insert_synchronizer_modified_queue(List<Thread> *q) {
+    auto link = new Synchronizer_Thread_List_Element(q);
+    _synchronizer_modified_queue.insert_head(link);
+}
+
+void Thread::remove_synchronizer_modified_queue(List<Thread> *q) {
+    auto link = _synchronizer_modified_queue.remove(q);
+    delete link;
 }
 
 __END_SYS

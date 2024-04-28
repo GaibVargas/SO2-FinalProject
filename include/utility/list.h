@@ -59,7 +59,7 @@ namespace List_Elements
         const R & rank() const { return _rank; }
         const R & key() const { return _rank; }
         void rank(const R & r) { _rank = r; }
-        int promote(const R & n = 1) {_rank -= n; return _rank; }
+        int promote(const R & n = 1) { _rank -= n; return _rank; }
         int demote(const R & n = 1) { _rank += n; return _rank; }
 
     private:
