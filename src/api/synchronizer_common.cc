@@ -8,6 +8,7 @@ __BEGIN_SYS
 void Synchronizer_Common::sleep() {
     update_waiting_queue_priorities();
     auto t = Thread::running();
+    // Verifica a thread de maior prioridade no fila de Waiting do sincronizador
     if (!_queue.empty() && _queue.head()->object()->priority() < t->priority()) {
         t = _queue.head()->object();
     }
@@ -82,6 +83,8 @@ void Synchronizer_Common::remove_all_lent_priorities() {
     }
 }
 
+// Seleciona a próxima prioridade da thread no momento em que ela deixa o sincronizador.
+// Usado para tratar aninhamento de sincronizadores.
 void Synchronizer_Common::set_next_priority(Thread *t) {
     t->criterion().set_original_priority();
 

@@ -20,11 +20,13 @@ public:
     // Value to be used for undefined addresses
     static const unsigned long NOT_USED         = -1UL;
 
-    // RISC-V mode for library
+    // RISC-V mode
     static const bool supervisor = false;                                                        // Run EPOS library in supervisor mode
+    // Configura a paginação da MMU
     static const bool paging = false;
 
     // CPU numbering
+    // O core E51 sempre é desligado
     static const unsigned long CPU_OFFSET       = 1;                         // We skip core zero, which is a E CPU without MMU
 
     // Clocks
@@ -63,7 +65,7 @@ public:
 
 template <> struct Traits<IC>: public Traits<Machine_Common>
 {
-    static const bool hysterically_debugged = false; // ANNOTATION: debugger do IC ligado
+    static const bool hysterically_debugged = false;
     static const bool debugged = hysterically_debugged;
     static const bool profiling = false;
 

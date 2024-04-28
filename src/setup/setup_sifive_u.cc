@@ -540,7 +540,6 @@ void Setup::enable_paging()
         db<Setup>(INF) << "Setup::sp=" << CPU::sp() << endl;
     }
 
-    // ANNOTATION: desligar as traduções de endereço podem ser feitas provavelmente aqui
     // Set SATP and enable paging
     MMU::pd(FLAT_MEM_MAP);
 

@@ -95,6 +95,7 @@ public:
 
     T * choose(T * obj) {
         db<Scheduler>(TRC) << "Scheduler[chosen=" << chosen() << "]::choose(" << obj;
+
         if(!Base::choose(obj->link()))
             obj = 0;
 

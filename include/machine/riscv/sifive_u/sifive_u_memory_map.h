@@ -58,7 +58,6 @@ public:
         IO              = Traits<Machine>::IO,
 
         SYS             = Traits<Machine>::SYS,
-
         SYS_CODE        = NOT_USED,
         SYS_INFO        = NOT_USED,
         SYS_PT          = NOT_USED,

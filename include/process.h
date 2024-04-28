@@ -147,7 +147,13 @@ protected:
     Thread * volatile _joining;
     Queue::Element _link;
 
+    // Lista de sincronizadores usada na função Synchronizer_Common::set_next_priority(Thread *t).
+    // Sua função é tratar o aninhamento de sincronizadores.
     Synchronizer_List _synchronizers;
+
+    // Lista de listas de threads dos sincronizadores.
+    // O objetivo dessa lista é permitir que a thread se auto remova da lista caso seja destruída, 
+    // evitando vazamento de memória.
     Synchronizer_Thread_List _synchronizer_running_queue;
     Synchronizer_Thread_List _synchronizer_modified_queue;
 
