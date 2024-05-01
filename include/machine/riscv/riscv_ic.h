@@ -195,6 +195,7 @@ public:
         return _int_vector[i];
     }
 
+    // ANNOTATION: Função que seta o handler de interrupção usado
     static void int_vector(Interrupt_Id i, const Interrupt_Handler & h) {
         db<IC>(TRC) << "IC::int_vector(int=" << i << ",h=" << reinterpret_cast<void *>(h) << ")" << endl;
         assert(i < INTS);
@@ -262,12 +263,14 @@ public:
     static Interrupt_Id irq2int(Interrupt_Id i) { return ((i == IRQ_PLIC) ? claim() + CLINT::IRQS : i) + EXCS; }
     static Interrupt_Id int2irq(Interrupt_Id i) { return  ((i > HARD_INT) ? i - CLINT::IRQS : i) - EXCS; }
 
+    // ANNOTATION: Seta um ID de interrupção em um core escolhido
     static void ipi(unsigned int cpu, Interrupt_Id i) {
         db<IC>(TRC) << "IC::ipi(cpu=" << cpu << ",int=" << i << ")" << endl;
         assert(i < INTS);
         msip(cpu) = 1;
     }
 
+    // ANNOTATION: Define que a interrupção de core chegou ao fim
     static void ipi_eoi(Interrupt_Id i) { msip(CPU::id()) = 0; }
 
 private:

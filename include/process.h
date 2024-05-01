@@ -110,9 +110,24 @@ protected:
 
     static Thread * volatile running() { return _scheduler.chosen(); }
 
-    static void lock() { CPU::int_disable(); }
-    static void unlock() { CPU::int_enable(); }
-    static bool locked() { return CPU::int_disabled(); }
+    static void lock() { 
+        CPU::int_disable();
+        if (Traits<Machine>::CPUS > 1)
+            while(!CPU::cas<bool>(spin_locked, false, true));
+    }
+
+    static void unlock() {
+        CPU::int_enable();
+        if (Traits<Machine>::CPUS > 1)
+            spin_locked = false;
+    }
+
+    static bool locked() {
+        if (Traits<Machine>::CPUS > 1)
+            return spin_locked;
+
+        return CPU::int_disabled();
+    }
 
     static void sleep(Queue * q);
     static void wakeup(Queue * q);
@@ -159,6 +174,7 @@ protected:
 
     static bool _not_booting;
     static volatile unsigned int _thread_count;
+    static volatile bool spin_locked;
     static Scheduler_Timer * _timer;
     static Scheduler<Thread> _scheduler;
 };

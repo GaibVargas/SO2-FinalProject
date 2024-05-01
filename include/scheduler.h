@@ -165,12 +165,16 @@ public:
     Microsecond total_execution_time() { return _total_execution_time; }
 
     void set_last_started_time(Microsecond time) { _last_started_time = time; }
-    void update_total_execution_time() {};
+    void update_total_execution_time() {}
 
     void set_borrowed_priority(int p = HIGHEST);
     void set_original_priority();
 
+    static unsigned int current_head() { return CPU::id(); }
+
 public:
+    static const unsigned int HEADS = Traits<Machine>::CPUS;
+
     Microsecond _deadline;
     Microsecond _period;
     Microsecond _capacity;

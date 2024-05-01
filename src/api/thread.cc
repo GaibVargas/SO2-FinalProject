@@ -9,6 +9,7 @@ __BEGIN_SYS
 
 bool Thread::_not_booting;
 volatile unsigned int Thread::_thread_count;
+volatile bool Thread::spin_locked = false;
 Scheduler_Timer * Thread::_timer;
 Scheduler<Thread> Thread::_scheduler;
 
@@ -412,7 +413,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 int Thread::idle()
 {
     db<Thread>(TRC) << "Thread::idle(this=" << running() << ")" << endl;
-    while(_thread_count > 1) { // someone else besides idle
+    while(_thread_count > Traits<Machine>::CPUS) { // someone else besides idle
         if(Traits<Thread>::trace_idle)
             db<Thread>(TRC) << "Thread::idle(this=" << running() << ")" << endl;
 
