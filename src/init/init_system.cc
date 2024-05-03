@@ -18,12 +18,11 @@ public:
     Init_System() {
         db<Init>(TRC) << "Init_System()" << endl;
 
-        db<Init>(INF) << "Init:si=" << *System::info() << endl;
-
-        db<Init>(INF) << "Initializing the architecture: " << endl;
-
         CPU::smp_barrier();
         if (CPU::id() == 0) {
+            db<Init>(INF) << "Init:si=" << *System::info() << endl;
+
+            db<Init>(INF) << "Initializing the architecture: " << endl;
             //ANNOTATION: Uma cpu limpa a memória e as outras aguardam.
             CPU::init();
 
@@ -44,11 +43,13 @@ public:
             db<Init>(INF) << "Initializing the machine: " << endl;
             //ANNOTATION: O IC::init() deve ser chamado apenas por um core
             Machine::init();
-        }
 
-        CPU::smp_barrier();
-        if (CPU::id() != 0)
+            CPU::smp_barrier();
+        } else {
+            CPU::smp_barrier();
+            CPU::init();
             Timer::init();
+        }
 
         db<Init>(INF) << "Initializing system abstractions: " << endl;
         System::init();

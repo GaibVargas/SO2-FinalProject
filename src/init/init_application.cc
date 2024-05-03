@@ -19,6 +19,10 @@ public:
     Init_Application() {
 
         CPU::smp_barrier();
+        if(CPU::id() != 0) {
+            CPU::smp_barrier();
+            return;
+        }
         if (CPU::id() == 0) {
             db<Init>(TRC) << "Init_Application()" << endl;
 

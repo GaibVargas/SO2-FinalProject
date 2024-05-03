@@ -16,12 +16,12 @@ public:
     Init_End() {
         db<Init>(TRC) << "Init_End()" << endl;
 
+        CPU::smp_barrier();
+
         if(!Traits<System>::multithread) {
             CPU::int_enable();
             return;
         }
-
-        CPU::smp_barrier();
 
         if(Memory_Map::BOOT_STACK != Memory_Map::NOT_USED && CPU::id() == 0)
             MMU::free(Memory_Map::BOOT_STACK, MMU::pages(Traits<Machine>::STACK_SIZE));
