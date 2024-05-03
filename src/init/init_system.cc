@@ -22,7 +22,7 @@ public:
 
         db<Init>(INF) << "Initializing the architecture: " << endl;
 
-        
+        CPU::smp_barrier();
         if (CPU::id() == 0) {
             //ANNOTATION: Uma cpu limpa a memória e as outras aguardam.
             CPU::init();

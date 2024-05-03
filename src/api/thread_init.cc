@@ -12,6 +12,7 @@ extern "C" { void __epos_app_entry(); }
 void Thread::init()
 {
     db<Init, Thread>(TRC) << "Thread::init()" << endl;
+    CPU::int_disable();
 
     if (CPU::id() == 0) {
         Criterion::init();
@@ -40,7 +41,6 @@ void Thread::init()
         _timer = new (SYSTEM) Scheduler_Timer(QUANTUM, time_slicer);
 
     // No more interrupts until we reach init_end
-    CPU::int_disable();
 
     CPU::smp_barrier();
 

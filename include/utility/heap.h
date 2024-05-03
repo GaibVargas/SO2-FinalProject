@@ -14,7 +14,7 @@ class Heap: private Grouping_List<char>
 {
 protected:
     static const bool typed = Traits<System>::multiheap;
-    static volatile bool locked;
+    static Spin _spin;
 
 public:
     using Grouping_List<char>::empty;
@@ -95,12 +95,12 @@ public:
         heap->free(addr, bytes);
     }
 
-    static void lock() {
-        while(!CPU::cas<bool>(locked, false, true));
+    void lock() {
+        Heap::_spin.acquire();
     }
 
-    static void unlock() {
-        locked = false;
+    void unlock() {
+        Heap::_spin.release();
     }
 
 private:

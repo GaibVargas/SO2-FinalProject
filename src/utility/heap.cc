@@ -6,7 +6,7 @@ extern "C" { void _panic(); }
 
 __BEGIN_UTIL
 
-volatile bool Heap::locked = false;
+Spin Heap::_spin;
 
 void Heap::out_of_memory(unsigned long bytes)
 {

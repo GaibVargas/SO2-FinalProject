@@ -5,14 +5,15 @@
 #include <process.h>
 #include <time.h>
 
+extern "C" { volatile unsigned long _running() __attribute__ ((alias ("_ZN4EPOS1S6Thread4selfEv"))); }
+
 __BEGIN_SYS
 
 bool Thread::_not_booting;
 volatile unsigned int Thread::_thread_count;
-volatile bool Thread::spin_locked = false;
+Spin Thread::_spin;
 Scheduler_Timer * Thread::_timer;
 Scheduler<Thread> Thread::_scheduler;
-
 
 void Thread::constructor_prologue(unsigned int stack_size)
 {
@@ -125,6 +126,9 @@ void Thread::priority(const Criterion & c)
     unlock();
 }
 
+Thread * volatile Thread::self() {
+    return _not_booting ? running() : reinterpret_cast<Thread * volatile>(CPU::id() + 1);
+}
 
 int Thread::join()
 {
