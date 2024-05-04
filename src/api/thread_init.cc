@@ -14,6 +14,7 @@ void Thread::init()
     CPU::smp_barrier();
 
     db<Init, Thread>(TRC) << "Thread::init()" << endl;
+    CPU::int_disable();
 
     if (CPU::id() == 0) {
         Criterion::init();
@@ -27,7 +28,6 @@ void Thread::init()
         new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::MAIN), main);
     } else
         Machine::delay(1000000);
-
 
     // Idle thread creation does not cause rescheduling (see Thread::constructor_epilogue)
     new (SYSTEM) Thread(Thread::Configuration(Thread::READY, Thread::IDLE), &Thread::idle);
