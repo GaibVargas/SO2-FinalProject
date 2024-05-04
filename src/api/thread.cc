@@ -5,13 +5,15 @@
 #include <process.h>
 #include <time.h>
 
+extern "C" { volatile unsigned long _running() __attribute__ ((alias ("_ZN4EPOS1S6Thread4selfEv"))); }
+
 __BEGIN_SYS
 
 bool Thread::_not_booting;
 volatile unsigned int Thread::_thread_count;
+Spin Thread::_spin;
 Scheduler_Timer * Thread::_timer;
 Scheduler<Thread> Thread::_scheduler;
-
 
 void Thread::constructor_prologue(unsigned int stack_size)
 {
@@ -124,6 +126,9 @@ void Thread::priority(const Criterion & c)
     unlock();
 }
 
+Thread * volatile Thread::self() {
+    return _not_booting ? running() : reinterpret_cast<Thread * volatile>(CPU::id() + 1);
+}
 
 int Thread::join()
 {
@@ -412,7 +417,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 int Thread::idle()
 {
     db<Thread>(TRC) << "Thread::idle(this=" << running() << ")" << endl;
-    while(_thread_count > 1) { // someone else besides idle
+    while(_thread_count > Traits<Machine>::CPUS) { // someone else besides idle
         if(Traits<Thread>::trace_idle)
             db<Thread>(TRC) << "Thread::idle(this=" << running() << ")" << endl;
 

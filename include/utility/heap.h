@@ -14,8 +14,10 @@ class Heap: private Grouping_List<char>
 {
 protected:
     static const bool typed = Traits<System>::multiheap;
+    static Spin _spin;
 
 public:
+    static volatile bool _booting;
     using Grouping_List<char>::empty;
     using Grouping_List<char>::size;
     using Grouping_List<char>::grouped_size;
@@ -31,10 +33,14 @@ public:
     }
 
     void * alloc(unsigned long bytes) {
+        
+        lock();
         db<Heaps>(TRC) << "Heap::alloc(this=" << this << ",bytes=" << bytes;
 
-        if(!bytes)
+        if(!bytes) {
+            unlock();
             return 0;
+        }
 
         if(!Traits<CPU>::unaligned_memory_access)
             while((bytes % sizeof(void *)))
@@ -48,6 +54,7 @@ public:
 
         Element * e = search_decrementing(bytes);
         if(!e) {
+            unlock();
             out_of_memory(bytes);
             return 0;
         }
@@ -60,10 +67,12 @@ public:
 
         db<Heaps>(TRC) << ") => " << reinterpret_cast<void *>(addr) << endl;
 
+        unlock();
         return addr;
     }
 
     void free(void * ptr, unsigned long bytes) {
+        lock();
         db<Heaps>(TRC) << "Heap::free(this=" << this << ",ptr=" << ptr << ",bytes=" << bytes << ")" << endl;
 
         if(ptr && (bytes >= sizeof(Element))) {
@@ -71,6 +80,7 @@ public:
             Element * m1, * m2;
             insert_merging(e, &m1, &m2);
         }
+        unlock();
     }
 
     static void typed_free(void * ptr) {
@@ -84,6 +94,18 @@ public:
         long * addr = reinterpret_cast<long *>(ptr);
         unsigned long bytes = *--addr;
         heap->free(addr, bytes);
+    }
+
+    void lock() {
+        if (!_booting)
+            CPU::int_disable();
+        Heap::_spin.acquire();
+    }
+
+    void unlock() {
+        Heap::_spin.release();
+        if (!_booting)
+            CPU::int_enable();
     }
 
 private:

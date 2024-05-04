@@ -12,7 +12,9 @@ void Timer::init()
 
     assert(CPU::int_disabled());
 
-    IC::int_vector(IC::INT_SYS_TIMER, int_handler);
+    // ANNOTATION: Assim que ele seta o handler de interrupção do timer
+    if (CPU::id() == 0)
+        IC::int_vector(IC::INT_SYS_TIMER, int_handler);
 
     reset();
     IC::enable(IC::INT_SYS_TIMER);

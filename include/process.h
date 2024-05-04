@@ -25,6 +25,7 @@ class Thread
     friend class IC;                    // for link() for priority ceiling
     friend class Mutex;
     friend class Semaphore;
+    friend class Heap;
 
     typedef List<Synchronizer_Common> Synchronizer_List;
     typedef List<Synchronizer_Common>::Element Synchronizer_List_Element;
@@ -97,7 +98,7 @@ public:
     void suspend();
     void resume();
 
-    static Thread * volatile self() { return _not_booting ? running() : reinterpret_cast<Thread * volatile>(CPU::id() + 1); }
+    static Thread * volatile self() __attribute__((used));
     static void yield();
     static void exit(int status = 0);
 
@@ -110,9 +111,24 @@ protected:
 
     static Thread * volatile running() { return _scheduler.chosen(); }
 
-    static void lock() { CPU::int_disable(); }
-    static void unlock() { CPU::int_enable(); }
-    static bool locked() { return CPU::int_disabled(); }
+    static void lock(Spin * lock = &_spin) { 
+        CPU::int_disable();
+        if (Traits<Machine>::CPUS > 1)
+            lock->acquire();
+    }
+
+    static void unlock(Spin * lock = &_spin) {
+        if (Traits<Machine>::CPUS > 1)
+            lock->release();
+        CPU::int_enable();
+    }
+
+    static bool locked(Spin * lock = &_spin) {
+        if (Traits<Machine>::CPUS > 1)
+            return lock->taken();
+
+        return CPU::int_disabled();
+    }
 
     static void sleep(Queue * q);
     static void wakeup(Queue * q);
@@ -140,6 +156,7 @@ private:
     static void init();
 
 protected:
+    static Spin _spin;
     char * _stack;
     Context * volatile _context;
     volatile State _state;

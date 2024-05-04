@@ -21,8 +21,12 @@ public:
             return;
         }
 
-        if(Memory_Map::BOOT_STACK != Memory_Map::NOT_USED)
+        CPU::smp_barrier();
+
+        if(Memory_Map::BOOT_STACK != Memory_Map::NOT_USED && CPU::id() == 0)
             MMU::free(Memory_Map::BOOT_STACK, MMU::pages(Traits<Machine>::STACK_SIZE));
+
+        CPU::smp_barrier();
 
         db<Init>(INF) << "INIT ends here!" << endl;
 
@@ -35,6 +39,9 @@ public:
 
         // Interrupts have been disabled at Thread::init() and will be reenabled by CPU::Context::load()
         // but we first reset the timer to avoid getting a time interrupt during load()
+
+        CPU::smp_barrier();
+
         if(Traits<Timer>::enabled)
             Timer::reset();
 

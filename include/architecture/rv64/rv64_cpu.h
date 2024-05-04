@@ -230,7 +230,8 @@ public:
 
     //ANNOTATION: O core 0 nunca é usado, e o valor de tp é configurado no setup
     static unsigned int id() { return tp(); }
-    static unsigned int cores() { return 1; }
+    static unsigned int cores() { return Traits<Machine>::CPUS; }
+    static void smp_barrier(unsigned long cores = CPU::cores()) { CPU_Common::smp_barrier<&finc>(cores, id()); }
 
     using CPU_Common::clock;
     using CPU_Common::min_clock;
