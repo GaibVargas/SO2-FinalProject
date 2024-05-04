@@ -11,6 +11,8 @@ extern "C" { void __epos_app_entry(); }
 
 void Thread::init()
 {
+    CPU::smp_barrier();
+
     db<Init, Thread>(TRC) << "Thread::init()" << endl;
     CPU::int_disable();
 
@@ -24,13 +26,13 @@ void Thread::init()
         Main * main = reinterpret_cast<Main *>(__epos_app_entry);
 
         new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::MAIN), main);
-    }
-
-    CPU::smp_barrier();
+    } else
+        Machine::delay(1000000);
 
     // Idle thread creation does not cause rescheduling (see Thread::constructor_epilogue)
     new (SYSTEM) Thread(Thread::Configuration(Thread::READY, Thread::IDLE), &Thread::idle);
 
+    CPU::smp_barrier();
     // The installation of the scheduler timer handler does not need to be done after the
     // creation of threads, since the constructor won't call reschedule() which won't call
     // dispatch that could call timer->reset()
@@ -40,11 +42,13 @@ void Thread::init()
     if(Criterion::timed && CPU::id() == 0)
         _timer = new (SYSTEM) Scheduler_Timer(QUANTUM, time_slicer);
 
+    CPU::int_disable();
     // No more interrupts until we reach init_end
 
     CPU::smp_barrier();
 
     // Transition from CPU-based locking to thread-based locking
+    Heap::_booting = false;
     _not_booting = true;
 }
 

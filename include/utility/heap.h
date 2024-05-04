@@ -17,6 +17,7 @@ protected:
     static Spin _spin;
 
 public:
+    static volatile bool _booting;
     using Grouping_List<char>::empty;
     using Grouping_List<char>::size;
     using Grouping_List<char>::grouped_size;
@@ -96,11 +97,15 @@ public:
     }
 
     void lock() {
+        if (!_booting)
+            CPU::int_disable();
         Heap::_spin.acquire();
     }
 
     void unlock() {
         Heap::_spin.release();
+        if (!_booting)
+            CPU::int_enable();
     }
 
 private:
