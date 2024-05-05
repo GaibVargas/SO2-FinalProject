@@ -110,14 +110,14 @@ protected:
 
     static Thread * volatile running() { return _scheduler.chosen(); }
 
-    static void lock() {
+    static void lock(Simple_Spin * _lock = &_spin) {
         CPU::int_disable();
         if (Traits<Machine>::CPUS > 1)
-            _spin.acquire();
+            _lock->acquire();
     }
-    static void unlock() {
+    static void unlock(Simple_Spin * _lock = &_spin) {
         if (Traits<Machine>::CPUS > 1)
-            _spin.release();
+            _lock->release();
         CPU::int_enable();
     }
     static bool locked() { 
