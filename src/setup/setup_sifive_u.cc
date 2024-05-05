@@ -141,9 +141,7 @@ Setup::Setup()
 
         ready = true;
     } else {
-        db<Setup>(INF) << "vou iniciar o loop" << endl;
         while(!ready);
-        db<Setup>(INF) << "aQUIIIIIIIIIII" << endl;
         if (paging)
             enable_paging();
         else
@@ -668,7 +666,6 @@ void Setup::call_next()
 {
     // Check for next stage and obtain the entry point
     Log_Addr pc;
-    db<Setup>(TRC) << "AAAAAAAAAAAAAAAA" << CPU::id() << endl;
 
     pc = &_start;
     db<Setup>(TRC) << "Setup::call_next(pc=" << pc << ",sp=" << CPU::sp() << ") => APPLICATION" << endl;

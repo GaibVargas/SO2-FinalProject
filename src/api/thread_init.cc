@@ -24,15 +24,11 @@ void Thread::init()
         Main * main = reinterpret_cast<Main *>(__epos_app_entry);
 
         new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::MAIN), main);
-    } else {
-        Machine::delay(1000000);
-    }
+    } 
 
     // Idle thread creation does not cause rescheduling (see Thread::constructor_epilogue)
     new (SYSTEM) Thread(Thread::Configuration(Thread::READY, Thread::IDLE), &Thread::idle);
-    // db<Thread>(WRN) << "AAAAAAAAAAAAAAAAAAAAA: " << CPU::id() << endl;
 
-    CPU::smp_barrier();
     // The installation of the scheduler timer handler does not need to be done after the
     // creation of threads, since the constructor won't call reschedule() which won't call
     // dispatch that could call timer->reset()

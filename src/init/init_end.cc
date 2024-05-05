@@ -15,7 +15,6 @@ class Init_End
 public:
     Init_End() {
         db<Init>(TRC) << "Init_End()" << endl;
-        CPU::smp_barrier();
 
         if(!Traits<System>::multithread) {
             CPU::int_enable();
@@ -23,11 +22,9 @@ public:
         }
 
         // ANNOTATION: Precisa ser feito por todo mundo?
-        if(Memory_Map::BOOT_STACK != Memory_Map::NOT_USED)
-            MMU::free(Memory_Map::BOOT_STACK, MMU::pages(Traits<Machine>::STACK_SIZE));
+        // if(Memory_Map::BOOT_STACK != Memory_Map::NOT_USED)
+        //     MMU::free(Memory_Map::BOOT_STACK, MMU::pages(Traits<Machine>::STACK_SIZE));
         
-        CPU::smp_barrier();
-
         db<Init>(INF) << "INIT ends here!" << endl;
 
         // Thread::self() and Task::self() can be safely called after the construction of MAIN

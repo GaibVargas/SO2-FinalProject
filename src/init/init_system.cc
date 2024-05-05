@@ -16,8 +16,6 @@ private:
 public:
     Init_System() {
 
-        // CPU::smp_barrier();
-
         if (CPU::id() == 0U) {
             db<Init>(TRC) << "Init_System()" << endl;
 
@@ -42,12 +40,14 @@ public:
     
             db<Init>(INF) << "Initializing the machine: " << endl;
             Machine::init();
-            CPU::smp_barrier();
-        } else {
-            CPU::smp_barrier();
+        }
+
+        CPU::smp_barrier();
+
+        if (CPU::id() != 0) {
             CPU::init();
             Timer::init();
-        }
+        }    
 
         db<Init>(INF) << "Initializing system abstractions: " << endl;
         System::init();
