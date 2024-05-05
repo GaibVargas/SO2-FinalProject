@@ -242,6 +242,8 @@ public:
     static bool int_enabled() { return supervisor ? (sstatus() & SIE) : (mstatus() & MIE); }
     static bool int_disabled() { return !int_enabled(); }
 
+    static void smp_barrier() { CPU_Common::smp_barrier<&finc>(Traits<Machine>::CPUS, CPU::id()); }
+
     static void halt() { ASM("wfi"); }
 
     static void fpu_save();

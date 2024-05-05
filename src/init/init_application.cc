@@ -18,6 +18,11 @@ private:
 public:
     Init_Application() {
         db<Init>(TRC) << "Init_Application()" << endl;
+        CPU::smp_barrier();
+        if (CPU::id() != 0U) {
+            CPU::smp_barrier();
+            return;
+        }
 
         // Initialize Application's heap
         db<Init>(INF) << "Initializing application's heap: ";
@@ -30,6 +35,8 @@ public:
             for(unsigned int frames = MMU::allocable(); frames; frames = MMU::allocable())
                 System::_heap->free(MMU::alloc(frames), frames * sizeof(MMU::Page));
         }
+
+        CPU::smp_barrier();
     }
 };
 

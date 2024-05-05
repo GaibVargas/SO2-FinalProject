@@ -404,7 +404,14 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         // disrupting the context (it doesn't make a difference for Intel, which already saves
         // parameters on the stack anyway).
         db<Thread>(INF) << "\nCPU::switch_context -> SP = " << CPU::sp() << " EPC = " << hex << CPU::epc() << endl;
+
+        if (Traits<Machine>::CPUS > 1)
+            _spin.release();
+
         CPU::switch_context(const_cast<Context **>(&prev->_context), next->_context);
+
+        if (Traits<Machine>::CPUS > 1)
+            _spin.acquire();
     }
 }
 
@@ -412,7 +419,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 int Thread::idle()
 {
     db<Thread>(TRC) << "Thread::idle(this=" << running() << ")" << endl;
-    while(_thread_count > 1) { // someone else besides idle
+    while(_thread_count > Traits<Machine>::CPUS) { // someone else besides idle
         if(Traits<Thread>::trace_idle)
             db<Thread>(TRC) << "Thread::idle(this=" << running() << ")" << endl;
 
