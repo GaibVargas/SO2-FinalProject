@@ -97,7 +97,7 @@ public:
     void suspend();
     void resume();
 
-    static Thread * volatile self() { return _not_booting ? running() : reinterpret_cast<Thread * volatile>(CPU::id() + 1); }
+    static Thread * volatile self() __attribute__((used));
     static void yield();
     static void exit(int status = 0);
 
@@ -110,12 +110,12 @@ protected:
 
     static Thread * volatile running() { return _scheduler.chosen(); }
 
-    static void lock(Simple_Spin * _lock = &_spin) {
+    static void lock(Spin * _lock = &_spin) {
         CPU::int_disable();
         if (Traits<Machine>::CPUS > 1)
             _lock->acquire();
     }
-    static void unlock(Simple_Spin * _lock = &_spin) {
+    static void unlock(Spin * _lock = &_spin) {
         if (Traits<Machine>::CPUS > 1)
             _lock->release();
         CPU::int_enable();
@@ -170,7 +170,7 @@ protected:
     Synchronizer_Thread_List _synchronizer_running_queue;
     Synchronizer_Thread_List _synchronizer_modified_queue;
 
-    static Simple_Spin _spin;
+    static Spin _spin;
     static bool _not_booting;
     static volatile unsigned int _thread_count;
     static Scheduler_Timer * _timer;

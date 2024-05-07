@@ -77,7 +77,7 @@ private:
     unsigned int _times;
     Tick _ticks;
     Queue::Element _link;
-    static Simple_Spin _spin;
+    static Spin _spin;
 
     static Alarm_Timer * _timer;
     static volatile Tick _elapsed;

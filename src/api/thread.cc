@@ -5,13 +5,15 @@
 #include <process.h>
 #include <time.h>
 
+extern "C" { volatile unsigned long _running() __attribute__ ((alias ("_ZN4EPOS1S6Thread4selfEv"))); }
+
 __BEGIN_SYS
 
 bool Thread::_not_booting;
 volatile unsigned int Thread::_thread_count;
 Scheduler_Timer * Thread::_timer;
 Scheduler<Thread> Thread::_scheduler;
-Simple_Spin Thread::_spin;
+Spin Thread::_spin;
 
 void Thread::constructor_prologue(unsigned int stack_size)
 {
@@ -374,6 +376,10 @@ void Thread::time_slicer(IC::Interrupt_Id i)
     unlock();
 }
 
+Thread * volatile Thread::self()
+{
+    return _not_booting ? running() : reinterpret_cast<Thread * volatile>(CPU::id() + 1);
+}
 
 void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 {
@@ -431,16 +437,17 @@ int Thread::idle()
     }
 
     CPU::int_disable();
-    if (CPU::id() == 0) {
+    if (CPU::id() == 0)
         db<Thread>(WRN) << "The last thread has exited!" << endl;
-        if(reboot) {
+    if(reboot) {
+        if (CPU::id() == 0)
             db<Thread>(WRN) << "Rebooting the machine ..." << endl;
-            Machine::reboot();
-        } else {
+        Machine::reboot();
+    } else {
+        if (CPU::id() == 0)
             db<Thread>(WRN) << "Halting the machine ..." << endl;
-            CPU::halt();
-        }
-    }
+        CPU::halt();
+    }    
 
     return 0;
 }
