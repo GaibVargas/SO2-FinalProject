@@ -23,6 +23,7 @@ extern "C" {
 
 __BEGIN_SYS
 
+static volatile bool bss_ready = false;
 extern OStream kout, kerr;
 
 class SV32_MMU;
@@ -139,9 +140,9 @@ Setup::Setup()
         else
             CPU::satp(0);
 
-        ready = true;
+        CPU::smp_barrier();
     } else {
-        while(!ready);
+        CPU::smp_barrier();
         if (paging)
             enable_paging();
         else
@@ -695,8 +696,12 @@ void _entry() // machine mode
     CPU::tp(CPU::mhartid() - 1);                        // tp will be CPU::id() for supervisor mode; we won't count core 0, which is an heterogeneous E51
     CPU::sp(Memory_Map::BOOT_STACK + Traits<Machine>::STACK_SIZE * (CPU::id() + 1) - sizeof(long)); // set the stack pointer, thus creating a stack for SETUP
 
-    if (CPU::id() == 0)
+    if (CPU::id() == 0) {
         Machine::clear_bss();
+        bss_ready = true;
+    }
+
+    while(!bss_ready);
 
     if (supervisor) {
         CPU::mtvec(CPU::INT_DIRECT, Memory_Map::INT_M2S);   // setup a machine mode interrupt handler to forward timer interrupts (which cannot be delegated via mideleg)

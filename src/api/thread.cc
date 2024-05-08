@@ -43,7 +43,6 @@ void Thread::constructor_epilogue(Log_Addr entry, unsigned int stack_size)
         _scheduler.suspend(this);
 
     if(preemptive && (_state == READY) && (_link.rank() != IDLE)) {
-        db<Thread>(WRN) << "AAAAAAAAAAAAAAAAAAAAAAAAAAAA" << endl;
         call_cpu_reschedule();
     }
 
