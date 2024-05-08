@@ -37,7 +37,7 @@ void Thread::init()
     // has a lower priority)
     if (CPU::id() == 0U) {
         if(Criterion::timed)
-            _timer = new (SYSTEM) Scheduler_Timer(QUANTUM, time_slicer);
+            _timer = new (SYSTEM) Scheduler_Timer(QUANTUM, rescheduler);
     }
 
     // No more interrupts until we reach init_end

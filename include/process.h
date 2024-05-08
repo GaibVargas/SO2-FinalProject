@@ -131,9 +131,11 @@ protected:
     static void wakeup(Queue * q);
     static void wakeup_all(Queue * q);
 
-    static void reschedule();
-    static void time_slicer(IC::Interrupt_Id interrupt);
     static void update_priorities();
+    static void reschedule();
+    static void rescheduler(IC::Interrupt_Id i);
+    static void call_cpu_reschedule();
+    static unsigned int lower_priority_thread_at_cpu();
 
     static void dispatch(Thread * prev, Thread * next, bool charge = true);
 

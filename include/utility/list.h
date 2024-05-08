@@ -1247,6 +1247,11 @@ public:
         return _chosen[R::current_head()];
     }
 
+    Element * volatile chosen_at(unsigned int cpu) {
+        if (cpu < 0 || cpu > Traits<Machine>::CPUS) return nullptr;
+        return _chosen[cpu];
+    }
+
 private:
     using Base::remove;
     void chosen(Element * e) { _chosen[R::current_head()] = e; }

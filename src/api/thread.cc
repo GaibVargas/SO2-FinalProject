@@ -42,8 +42,10 @@ void Thread::constructor_epilogue(Log_Addr entry, unsigned int stack_size)
     if((_state != READY) && (_state != RUNNING))
         _scheduler.suspend(this);
 
-    if(preemptive && (_state == READY) && (_link.rank() != IDLE))
-        reschedule();
+    if(preemptive && (_state == READY) && (_link.rank() != IDLE)) {
+        db<Thread>(WRN) << "AAAAAAAAAAAAAAAAAAAAAAAAAAAA" << endl;
+        call_cpu_reschedule();
+    }
 
     unlock();
 }
@@ -327,6 +329,25 @@ void Thread::wakeup_all(Queue * q)
     }
 }
 
+void Thread::call_cpu_reschedule()
+{
+    assert(locked());
+
+    auto cpu_id = lower_priority_thread_at_cpu();
+    db<Thread>(WRN) << "cpuID" << cpu_id << endl;
+    if (cpu_id == CPU::id()) return reschedule();
+
+    IC::ipi(cpu_id, IC::INT_RESCHEDULER);
+
+}
+
+void Thread::rescheduler(IC::Interrupt_Id i)
+{
+    lock();
+    db<Thread>(WRN) << "Interrupcao: " << i << endl;
+    reschedule();
+    unlock();
+}
 
 void Thread::reschedule()
 {
@@ -366,14 +387,6 @@ void Thread::update_priorities()
         if (t->_link.rank() == IDLE || t->_link.rank() == MAIN) continue;
         t->criterion().update_priority();
     }
-}
-
-
-void Thread::time_slicer(IC::Interrupt_Id i)
-{
-    lock();
-    reschedule();
-    unlock();
 }
 
 Thread * volatile Thread::self()
@@ -450,6 +463,25 @@ int Thread::idle()
     }    
 
     return 0;
+}
+
+unsigned int Thread::lower_priority_thread_at_cpu() {
+    assert(locked());
+
+    Thread * t = _scheduler.chosen_at(0);
+    if (t == nullptr) return 0;
+
+    unsigned int cpu_id = 0;
+    for (unsigned int i = 1; i < Traits<Machine>::CPUS; i++) {
+        Thread * temp_t = _scheduler.chosen_at(i);
+        if (temp_t == nullptr) return i;
+        if (t->priority() < temp_t->priority()) {
+            t = temp_t;
+            cpu_id = i;
+        }
+    }
+
+    return cpu_id;
 }
 
 void Thread::set_borrowed_priority(int p) {

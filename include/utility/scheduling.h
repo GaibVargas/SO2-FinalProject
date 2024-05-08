@@ -49,6 +49,10 @@ public:
             return const_cast<T * volatile>(Base::chosen()->object());
     }
 
+    T * volatile chosen_at(unsigned int cpu) { 
+        return ((Base::chosen_at(cpu)) ? Base::chosen_at(cpu)->object() : nullptr);
+    }
+
     void insert(T * obj) {
         db<Scheduler>(TRC) << "Scheduler[chosen=" << chosen() << "]::insert(" << obj << ")" << endl;
 
