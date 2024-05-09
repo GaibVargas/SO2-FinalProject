@@ -19,7 +19,7 @@ template<> struct Traits<Build>: public Traits_Tokens
 
     // Default flags
     static const bool enabled = true;
-    static const bool debugged = true; // ANNOTATION: para debuggar é necessário ligar para cada componente
+    static const bool debugged = false; // ANNOTATION: para debuggar é necessário ligar para cada componente
     static const bool hysterically_debugged = false;
 };
 

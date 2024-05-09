@@ -213,7 +213,7 @@ void Thread::resume()
         _scheduler.resume(this);
 
         if(preemptive)
-            reschedule();
+            call_cpu_reschedule();
     } else
         db<Thread>(WRN) << "Resume called for unsuspended object!" << endl;
 
@@ -297,8 +297,8 @@ void Thread::wakeup(Queue * q)
             t->criterion().update_priority();
         _scheduler.resume(t);
 
-        if(preemptive) 
-            reschedule();
+        if(preemptive)
+            call_cpu_reschedule();
     }
 }
 
@@ -323,8 +323,9 @@ void Thread::wakeup_all(Queue * q)
             _scheduler.resume(t);
         }
 
+        // ANNOTATION: Demais threads acordadas serão escalonadas no Quantum, se necessário
         if(preemptive)
-            reschedule();
+            call_cpu_reschedule();
     }
 }
 
@@ -332,8 +333,9 @@ void Thread::call_cpu_reschedule()
 {
     assert(locked());
 
+    if (Traits<Machine>::CPUS == 1) return reschedule();
+
     auto cpu_id = lower_priority_thread_at_cpu();
-    db<Thread>(WRN) << "cpuID" << cpu_id << endl;
     if (cpu_id == CPU::id()) return reschedule();
 
     IC::ipi(cpu_id, IC::INT_RESCHEDULER);
@@ -343,7 +345,6 @@ void Thread::call_cpu_reschedule()
 void Thread::rescheduler(IC::Interrupt_Id i)
 {
     lock();
-    db<Thread>(WRN) << "Interrupcao: " << i << endl;
     reschedule();
     unlock();
 }

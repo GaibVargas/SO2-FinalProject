@@ -58,8 +58,6 @@ public:
         db<Spin>(TRC) << "Spin::release[SPIN=" << this << "]()}" << endl;
     }
 
-    volatile bool taken() const { return _locked; }
-
 private:
     volatile bool _locked;
 };

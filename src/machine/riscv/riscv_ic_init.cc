@@ -22,9 +22,7 @@ void IC::init()
     for(Interrupt_Id i = EXCS; i < INTS; i++)
         _int_vector[i] = &int_not;
 
-    IC::int_vector(INT_RESCHEDULER, Thread::rescheduler);
 
-    IC::enable(INT_RESCHEDULER);
     IC::enable(INT_PLIC);
     PLIC::threshold(0); // set the threshold to 0 so all enabled external interrupts will be dispatched
 }

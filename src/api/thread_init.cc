@@ -38,7 +38,13 @@ void Thread::init()
     if (CPU::id() == 0U) {
         if(Criterion::timed)
             _timer = new (SYSTEM) Scheduler_Timer(QUANTUM, rescheduler);
+
+        if (Traits<Machine>::CPUS > 1)
+            IC::int_vector(IC::INT_RESCHEDULER, rescheduler);
     }
+
+    if (Traits<Machine>::CPUS > 1)
+        IC::enable(IC::INT_RESCHEDULER);
 
     // No more interrupts until we reach init_end
     CPU::int_disable();

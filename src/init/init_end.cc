@@ -22,8 +22,10 @@ public:
         }
 
         // ANNOTATION: Precisa ser feito por todo mundo?
-        // if(Memory_Map::BOOT_STACK != Memory_Map::NOT_USED)
-        //     MMU::free(Memory_Map::BOOT_STACK, MMU::pages(Traits<Machine>::STACK_SIZE));
+        if(Memory_Map::BOOT_STACK != Memory_Map::NOT_USED && CPU::id() == 0)
+            MMU::free(Memory_Map::BOOT_STACK, MMU::pages(Traits<Machine>::STACK_SIZE * Traits<Machine>::CPUS));
+        
+        CPU::smp_barrier();
         
         db<Init>(INF) << "INIT ends here!" << endl;
 
