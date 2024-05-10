@@ -122,9 +122,8 @@ protected:
     }
     static bool locked() { 
         if (Traits<Machine>::CPUS > 1)
-            return _spin.taken();
-        else
-            return CPU::int_disabled();
+            return _spin.taken() && CPU::int_disabled();
+        return CPU::int_disabled();
     }
 
     static void sleep(Queue * q);

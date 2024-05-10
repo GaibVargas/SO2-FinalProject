@@ -18,6 +18,7 @@ protected:
 
 public:
     static bool _not_booting;
+    static bool _has_changed_interruption;
 
 public:
     using Grouping_List<char>::empty;
@@ -98,15 +99,20 @@ public:
     }
 
     static void lock() {
-        if (_not_booting)
+        if (_not_booting && CPU::int_enabled()) {
             CPU::int_disable();
+            _has_changed_interruption = true;
+        }
+
         _spin.acquire();
     }
 
     static void unlock() {
         _spin.release();
-        if (_not_booting)
+        if (_not_booting && _has_changed_interruption) {
+            _has_changed_interruption = false;
             CPU::int_enable();
+        }
     }
 
 private:

@@ -424,13 +424,15 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         // parameters on the stack anyway).
         db<Thread>(INF) << "\nCPU::switch_context -> SP = " << CPU::sp() << " EPC = " << hex << CPU::epc() << endl;
 
+        // ANNOTATION: Não usa unlock pois habilita as interrupções
         if (Traits<Machine>::CPUS > 1)
             _spin.release();
 
         CPU::switch_context(const_cast<Context **>(&prev->_context), next->_context);
 
-        if (Traits<Machine>::CPUS > 1)
-            _spin.acquire();
+        // ANNOTATION: Ao retornar a execução da thread, as interrupções podem ter sido ligadas na CPU
+        // portanto é importante que as interrupções sejam desligadas para respeitar restrições do locked.
+        lock();
     }
 }
 

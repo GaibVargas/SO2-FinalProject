@@ -8,6 +8,7 @@ __BEGIN_UTIL
 
 Simple_Spin Heap::_spin;
 bool Heap::_not_booting = false;
+bool Heap::_has_changed_interruption = false;
 
 void Heap::out_of_memory(unsigned long bytes)
 {
