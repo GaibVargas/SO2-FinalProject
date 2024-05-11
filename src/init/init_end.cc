@@ -36,9 +36,10 @@ public:
 
         db<Init, Thread>(INF) << "Dispatching the first thread: " << first << endl;
 
+        CPU::smp_barrier();
+
         // Interrupts have been disabled at Thread::init() and will be reenabled by CPU::Context::load()
         // but we first reset the timer to avoid getting a time interrupt during load()
-        CPU::smp_barrier();
         if(Traits<Timer>::enabled)
             Timer::reset();
 

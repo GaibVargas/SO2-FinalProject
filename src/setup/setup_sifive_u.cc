@@ -133,21 +133,15 @@ Setup::Setup()
         // Relocate the machine to supervisor interrupt forwarder
         if (supervisor)
             setup_m2s();
-
-        // Enable paging
-        if (paging)
-            enable_paging();
-        else
-            CPU::satp(0);
-
-        CPU::smp_barrier();
-    } else {
-        CPU::smp_barrier();
-        if (paging)
-            enable_paging();
-        else
-            CPU::satp(0);
     }
+    
+    CPU::smp_barrier();
+
+    // Enable paging
+    if (paging)
+        enable_paging();
+    else
+        CPU::satp(0);
 
     if (Traits<Timer>::FREQUENCY > Traits<Timer>::MAX_FREQUENCY) {
         kout << "Frequência muito alta.";
