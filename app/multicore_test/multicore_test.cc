@@ -34,6 +34,10 @@ int main()
     cout << "The measured time was " << chrono.read() / 1000 <<" ms!" << endl;
     cout << "Done!";
 
+    for (int i = 0; i < threads_number; i++) {
+        delete threads[i];
+    }
+
     return 0;
 }
 
