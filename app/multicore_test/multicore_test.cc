@@ -16,7 +16,7 @@ int main()
 {
     cout << "Multicore Test" << endl;
 
-    cout << "\nThis test consists in creating " << 4 << " periodic threads that executes for " << wcet << "ms each" << endl;
+    cout << "\nThis test consists in creating " << threads_number << " periodic threads that executes for " << wcet << "ms each" << endl;
 
     cout << "Threads will now be created and I'll wait for them to finish..." << endl;
 

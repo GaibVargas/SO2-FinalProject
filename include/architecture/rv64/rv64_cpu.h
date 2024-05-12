@@ -253,32 +253,23 @@ public:
 
     template<typename T>
     static T tsl(volatile T & lock) {
-        register T old;
         register T one = 1;
         if(sizeof(T) == sizeof(Reg64))
-            ASM("1: lr.d    %0, (%1)        \n"
-                "   sc.d    t3, %2, (%1)    \n"
-                "   bnez    t3, 1b          \n" : "=&r"(old) : "r"(&lock), "r"(one) : "t3", "cc", "memory");
+            ASM("amoswap.d  %0,  %0, (%1) \n": "+&r"(one) : "r"(&lock): "memory");
         else
-            ASM("1: lr.w    %0, (%1)        \n"
-                "   sc.w    t3, %2, (%1)    \n"
-                "   bnez    t3, 1b          \n" : "=&r"(old) : "r"(&lock), "r"(one) : "t3", "cc", "memory");
-        return old;
+            ASM("amoswap.w  %0,  %0, (%1) \n": "+&r"(one) : "r"(&lock): "memory");
+        return one;
     }
 
     template<typename T>
     static T finc(volatile T & value) {
         register T old;
         if(sizeof(T) == sizeof(Reg64))
-            ASM("1: lr.d    %0, (%1)        \n"
-                "   addi    %0, %0, 1       \n"
-                "   sc.d    t3, %0, (%1)    \n"
-                "   bnez    t3, 1b          \n" : "=&r"(old) : "r"(&value) : "t3", "cc", "memory");
+            ASM("li       t3, 1        \n"
+                "amoadd.d %0, t3, (%1) \n": "=&r"(old) : "r"(&value) : "t3", "memory");
         else
-            ASM("1: lr.w    %0, (%1)        \n"
-                "   addi    %0, %0, 1       \n"
-                "   sc.w    t3, %0, (%1)    \n"
-                "   bnez    t3, 1b          \n" : "=&r"(old) : "r"(&value) : "t3", "cc", "memory");
+            ASM("li       t3, 1        \n"
+                "amoadd.w %0, t3, (%1) \n": "=&r"(old) : "r"(&value) : "t3", "memory");
         return old - 1;
     }
 
@@ -286,15 +277,11 @@ public:
     static T fdec(volatile T & value) {
         register T old;
         if(sizeof(T) == sizeof(Reg64))
-            ASM("1: lr.d    %0, (%1)        \n"
-                "   addi    %0, %0, -1      \n"
-                "   sc.d    t3, %0, (%1)    \n"
-                "   bnez    t3, 1b          \n" : "=&r"(old) : "r"(&value) : "t3", "cc", "memory");
+            ASM("li       t3, -1        \n"
+                "amoadd.d %0, t3, (%1) \n": "=&r"(old) : "r"(&value) : "t3", "memory");
         else
-            ASM("1: lr.w    %0, (%1)        \n"
-                "   addi    %0, %0, -1      \n"
-                "   sc.w    t3, %0, (%1)    \n"
-                "   bnez    t3, 1b          \n" : "=&r"(old) : "r"(&value) : "t3", "cc", "memory");
+            ASM("li       t3, -1        \n"
+                "amoadd.w %0, t3, (%1) \n": "=&r"(old) : "r"(&value) : "t3", "memory");
         return old + 1;
     }
 
