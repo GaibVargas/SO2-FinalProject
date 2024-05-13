@@ -16,7 +16,7 @@ private:
 public:
     Init_System() {
 
-        if (CPU::id() == 0U) {
+        if (CPU::id() == 0) {
             db<Init>(TRC) << "Init_System()" << endl;
 
             db<Init>(INF) << "Init:si=" << *System::info() << endl;
@@ -52,7 +52,7 @@ public:
         db<Init>(INF) << "Initializing system abstractions: " << endl;
         System::init();
 
-        if (CPU::id() == 0U) {
+        if (CPU::id() == 0) {
             // Randomize the Random Numbers Generator's seed
             if(Traits<Random>::enabled) {
                 db<Init>(INF) << "Randomizing the Random Numbers Generator's seed." << endl;

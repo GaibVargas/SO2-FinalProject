@@ -15,7 +15,7 @@ void Thread::init()
 
     Criterion::init();
 
-    if (CPU::id() == 0U) {
+    if (CPU::id() == 0) {
 
         typedef int (Main)();
 
@@ -35,16 +35,16 @@ void Thread::init()
     // Letting reschedule() happen during thread creation is also harmless, since MAIN is
     // created first and dispatch won't replace it nor by itself neither by IDLE (which
     // has a lower priority)
-    if (CPU::id() == 0U) {
+    if (CPU::id() == 0) {
         if(Criterion::timed)
             _timer = new (SYSTEM) Scheduler_Timer(QUANTUM, rescheduler);
-
-        if (Traits<Machine>::CPUS > 1)
-            IC::int_vector(IC::INT_RESCHEDULER, rescheduler);
     }
 
-    if (Traits<Machine>::CPUS > 1)
+    if (Traits<Machine>::CPUS > 1) {
+        if (CPU::id() == 0)
+            IC::int_vector(IC::INT_RESCHEDULER, Thread::rescheduler);
         IC::enable(IC::INT_RESCHEDULER);
+    }
 
     // No more interrupts until we reach init_end
     CPU::int_disable();

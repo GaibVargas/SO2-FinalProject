@@ -23,7 +23,7 @@ int main()
     chrono.start();
 
     for (int i = 0; i < threads_number; i++) {
-        threads[i] = new Periodic_Thread(RTConf((wcet * 2) * 1000, 0, 0, 0, 0, wcet * 1000), &exec, i);
+        threads[i] = new Periodic_Thread(RTConf((wcet * (threads_number + 1)) * 1000, 0, 0, 0, 0, wcet * 1000), &exec, i);
     }
     for (int i = 0; i < threads_number; i++) {
         threads[i]->join();

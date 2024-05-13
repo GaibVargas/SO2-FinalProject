@@ -765,6 +765,9 @@ if(Traits<CPU>::WORD_SIZE == 32) {
     } else if(id == CPU::EXC_ENVS) {
         CPU::mipc(CPU::STI);                            // STI was handled in supervisor mode, so clear the corresponding pending bit
         CPU::mepc(CPU::mepc() + 4);
+    } else if((id & CLINT::INT_MASK) == CLINT::IRQ_MAC_SOFT) {
+        IC::ipi_eoi(id);
+        CPU::mips(CPU::SSI);
     }
 
     // Restore context

@@ -10,7 +10,7 @@ void CPU::init()
 {
     db<Init, CPU>(TRC) << "CPU::init()" << endl;
 
-    if (CPU::id() == 0U) {
+    if (CPU::id() == 0) {
         if(Traits<MMU>::enabled)
             MMU::init();
         else

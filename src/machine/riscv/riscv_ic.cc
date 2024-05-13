@@ -87,7 +87,10 @@ void IC::dispatch()
     }
 
     if(id == INT_RESCHEDULER) {
-        ipi_eoi(id);
+        if (supervisor)
+            CPU::sipc(CPU::SSI);
+        else
+            ipi_eoi(id);
     }
 
     _int_vector[id](id);

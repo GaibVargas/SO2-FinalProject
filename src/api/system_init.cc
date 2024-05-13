@@ -8,7 +8,7 @@ __BEGIN_SYS
 
 void System::init()
 {
-    if (CPU::id() == 0U) {
+    if (CPU::id() == 0) {
         if(Traits<Alarm>::enabled)
             Alarm::init();
     }
