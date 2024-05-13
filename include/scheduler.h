@@ -116,6 +116,10 @@ public:
     Priority(int p = NORMAL, Tn & ... an): _priority(p) {}
 
     operator const volatile int() const volatile { return _priority; }
+    static unsigned int current_head() { return CPU::id(); }
+
+public:
+    static const unsigned int HEADS = Traits<Machine>::CPUS;
 
 protected:
     volatile int _priority;

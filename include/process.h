@@ -97,7 +97,7 @@ public:
     void suspend();
     void resume();
 
-    static Thread * volatile self() { return _not_booting ? running() : reinterpret_cast<Thread * volatile>(CPU::id() + 1); }
+    static Thread * volatile self() __attribute__((used));
     static void yield();
     static void exit(int status = 0);
 
@@ -110,17 +110,31 @@ protected:
 
     static Thread * volatile running() { return _scheduler.chosen(); }
 
-    static void lock() { CPU::int_disable(); }
-    static void unlock() { CPU::int_enable(); }
-    static bool locked() { return CPU::int_disabled(); }
+    static void lock(Spin * _lock = &_spin) {
+        CPU::int_disable();
+        if (Traits<Machine>::CPUS > 1)
+            _lock->acquire();
+    }
+    static void unlock(Spin * _lock = &_spin) {
+        if (Traits<Machine>::CPUS > 1)
+            _lock->release();
+        CPU::int_enable();
+    }
+    static bool locked() { 
+        if (Traits<Machine>::CPUS > 1)
+            return _spin.taken() && CPU::int_disabled();
+        return CPU::int_disabled();
+    }
 
     static void sleep(Queue * q);
     static void wakeup(Queue * q);
     static void wakeup_all(Queue * q);
 
-    static void reschedule();
-    static void time_slicer(IC::Interrupt_Id interrupt);
     static void update_priorities();
+    static void reschedule();
+    static void rescheduler(IC::Interrupt_Id i);
+    static void call_cpu_reschedule();
+    static unsigned int lower_priority_thread_at_cpu();
 
     static void dispatch(Thread * prev, Thread * next, bool charge = true);
 
@@ -157,6 +171,7 @@ protected:
     Synchronizer_Thread_List _synchronizer_running_queue;
     Synchronizer_Thread_List _synchronizer_modified_queue;
 
+    static Spin _spin;
     static bool _not_booting;
     static volatile unsigned int _thread_count;
     static Scheduler_Timer * _timer;

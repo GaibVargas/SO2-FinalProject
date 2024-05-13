@@ -15,13 +15,16 @@ void Thread::init()
 
     Criterion::init();
 
-    typedef int (Main)();
+    if (CPU::id() == 0) {
 
-    // If EPOS is a library, then adjust the application entry point to __epos_app_entry, which will directly call main().
-    // In this case, _init will have already been called, before Init_Application to construct MAIN's global objects.
-    Main * main = reinterpret_cast<Main *>(__epos_app_entry);
+        typedef int (Main)();
 
-    new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::MAIN), main);
+        // If EPOS is a library, then adjust the application entry point to __epos_app_entry, which will directly call main().
+        // In this case, _init will have already been called, before Init_Application to construct MAIN's global objects.
+        Main * main = reinterpret_cast<Main *>(__epos_app_entry);
+
+        new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::MAIN), main);
+    } 
 
     // Idle thread creation does not cause rescheduling (see Thread::constructor_epilogue)
     new (SYSTEM) Thread(Thread::Configuration(Thread::READY, Thread::IDLE), &Thread::idle);
@@ -32,14 +35,24 @@ void Thread::init()
     // Letting reschedule() happen during thread creation is also harmless, since MAIN is
     // created first and dispatch won't replace it nor by itself neither by IDLE (which
     // has a lower priority)
-    if(Criterion::timed)
-        _timer = new (SYSTEM) Scheduler_Timer(QUANTUM, time_slicer);
+    if (CPU::id() == 0) {
+        if(Criterion::timed)
+            _timer = new (SYSTEM) Scheduler_Timer(QUANTUM, rescheduler);
+    }
+
+    if (Traits<Machine>::CPUS > 1) {
+        if (CPU::id() == 0)
+            IC::int_vector(IC::INT_RESCHEDULER, Thread::rescheduler);
+        IC::enable(IC::INT_RESCHEDULER);
+    }
 
     // No more interrupts until we reach init_end
     CPU::int_disable();
+    CPU::smp_barrier();
 
     // Transition from CPU-based locking to thread-based locking
     _not_booting = true;
+    Heap::_not_booting = true;
 }
 
 __END_SYS

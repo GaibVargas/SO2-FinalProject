@@ -6,6 +6,8 @@
 __BEGIN_SYS
 
 void Synchronizer_Common::sleep() {
+    assert(Thread::locked());
+
     update_waiting_queue_priorities();
     auto t = Thread::running();
     // Verifica a thread de maior prioridade no fila de Waiting do sincronizador
@@ -18,6 +20,9 @@ void Synchronizer_Common::sleep() {
 }
 
 void Synchronizer_Common::acquire_synchronyzer(Thread *t) {
+    assert(Thread::locked());
+    if (Traits<Thread>::priority_inversion_protocol == Traits<Build>::NOT) return;
+
     auto link_thread = new Thread_List_Element(t);
     _running_queue.insert(link_thread);
 
@@ -26,6 +31,9 @@ void Synchronizer_Common::acquire_synchronyzer(Thread *t) {
 }
 
 void Synchronizer_Common::release_synchronyzer(Thread *t) {
+    assert(Thread::locked());
+    if (Traits<Thread>::priority_inversion_protocol == Traits<Build>::NOT) return;
+
     t->remove_synchronizer_running_queue(&_running_queue);
     t->remove_synchronizer(this);
 
@@ -40,6 +48,9 @@ void Synchronizer_Common::release_synchronyzer(Thread *t) {
 }
 
 void Synchronizer_Common::pass_priority_to_threads(Thread *t) {
+    assert(Thread::locked());
+    if (Traits<Thread>::priority_inversion_protocol == Traits<Build>::NOT) return;
+
     // ANNOTATION: a thread de prioridade mais alta dentro da região crítica, com prioridade mais baixa que t
     Thread *prioritize_thread = nullptr;
     for (auto i = _running_queue.begin(); i != _running_queue.end(); i++) {
@@ -60,6 +71,9 @@ void Synchronizer_Common::pass_priority_to_threads(Thread *t) {
 }
 
 void Synchronizer_Common::remove_all_lent_priorities() {
+    assert(Thread::locked());
+    if (Traits<Thread>::priority_inversion_protocol == Traits<Build>::NOT) return;
+
     for (auto i = _running_queue.begin(); i != _running_queue.end(); i++) {
         auto t = i->object(); 
         t->remove_synchronizer(this);
@@ -86,6 +100,8 @@ void Synchronizer_Common::remove_all_lent_priorities() {
 // Seleciona a próxima prioridade da thread no momento em que ela deixa o sincronizador.
 // Usado para tratar aninhamento de sincronizadores.
 void Synchronizer_Common::set_next_priority(Thread *t) {
+    assert(Thread::locked());
+
     t->criterion().set_original_priority();
 
     int highest_priority = t->priority();

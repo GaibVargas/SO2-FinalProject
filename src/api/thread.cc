@@ -5,13 +5,15 @@
 #include <process.h>
 #include <time.h>
 
+extern "C" { volatile unsigned long _running() __attribute__ ((alias ("_ZN4EPOS1S6Thread4selfEv"))); }
+
 __BEGIN_SYS
 
 bool Thread::_not_booting;
 volatile unsigned int Thread::_thread_count;
 Scheduler_Timer * Thread::_timer;
 Scheduler<Thread> Thread::_scheduler;
-
+Spin Thread::_spin;
 
 void Thread::constructor_prologue(unsigned int stack_size)
 {
@@ -40,8 +42,9 @@ void Thread::constructor_epilogue(Log_Addr entry, unsigned int stack_size)
     if((_state != READY) && (_state != RUNNING))
         _scheduler.suspend(this);
 
-    if(preemptive && (_state == READY) && (_link.rank() != IDLE))
-        reschedule();
+    if(preemptive && (_state == READY) && (_link.rank() != IDLE)) {
+        call_cpu_reschedule();
+    }
 
     unlock();
 }
@@ -210,7 +213,7 @@ void Thread::resume()
         _scheduler.resume(this);
 
         if(preemptive)
-            reschedule();
+            call_cpu_reschedule();
     } else
         db<Thread>(WRN) << "Resume called for unsuspended object!" << endl;
 
@@ -294,8 +297,8 @@ void Thread::wakeup(Queue * q)
             t->criterion().update_priority();
         _scheduler.resume(t);
 
-        if(preemptive) 
-            reschedule();
+        if(preemptive)
+            call_cpu_reschedule();
     }
 }
 
@@ -320,11 +323,31 @@ void Thread::wakeup_all(Queue * q)
             _scheduler.resume(t);
         }
 
+        // ANNOTATION: Demais threads acordadas serão escalonadas no Quantum, se necessário
         if(preemptive)
-            reschedule();
+            call_cpu_reschedule();
     }
 }
 
+void Thread::call_cpu_reschedule()
+{
+    assert(locked());
+
+    if (Traits<Machine>::CPUS == 1) return reschedule();
+
+    auto cpu_id = lower_priority_thread_at_cpu();
+    if (cpu_id == CPU::id()) return reschedule();
+
+    IC::ipi(cpu_id, IC::INT_RESCHEDULER);
+
+}
+
+void Thread::rescheduler(IC::Interrupt_Id i)
+{
+    lock();
+    reschedule();
+    unlock();
+}
 
 void Thread::reschedule()
 {
@@ -366,14 +389,10 @@ void Thread::update_priorities()
     }
 }
 
-
-void Thread::time_slicer(IC::Interrupt_Id i)
+Thread * volatile Thread::self()
 {
-    lock();
-    reschedule();
-    unlock();
+    return _not_booting ? running() : reinterpret_cast<Thread * volatile>(CPU::id() + 1);
 }
-
 
 void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 {
@@ -404,7 +423,16 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         // disrupting the context (it doesn't make a difference for Intel, which already saves
         // parameters on the stack anyway).
         db<Thread>(INF) << "\nCPU::switch_context -> SP = " << CPU::sp() << " EPC = " << hex << CPU::epc() << endl;
+
+        // ANNOTATION: Não usa unlock pois habilita as interrupções
+        if (Traits<Machine>::CPUS > 1)
+            _spin.release();
+
         CPU::switch_context(const_cast<Context **>(&prev->_context), next->_context);
+
+        // ANNOTATION: Ao retornar a execução da thread, as interrupções podem ter sido ligadas na CPU
+        // portanto é importante que as interrupções sejam desligadas para respeitar restrições do locked.
+        lock();
     }
 }
 
@@ -412,7 +440,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 int Thread::idle()
 {
     db<Thread>(TRC) << "Thread::idle(this=" << running() << ")" << endl;
-    while(_thread_count > 1) { // someone else besides idle
+    while(_thread_count > Traits<Machine>::CPUS) { // someone else besides idle
         if(Traits<Thread>::trace_idle)
             db<Thread>(TRC) << "Thread::idle(this=" << running() << ")" << endl;
 
@@ -424,19 +452,38 @@ int Thread::idle()
     }
 
     CPU::int_disable();
-    db<Thread>(WRN) << "The last thread has exited!" << endl;
+    if (CPU::id() == 0)
+        db<Thread>(WRN) << "The last thread has exited!" << endl;
     if(reboot) {
-        db<Thread>(WRN) << "Rebooting the machine ..." << endl;
+        if (CPU::id() == 0)
+            db<Thread>(WRN) << "Rebooting the machine ..." << endl;
         Machine::reboot();
     } else {
-        db<Thread>(WRN) << "Halting the machine ..." << endl;
+        if (CPU::id() == 0)
+            db<Thread>(WRN) << "Halting the machine ..." << endl;
         CPU::halt();
-    }
-
-    // Some machines will need a little time to actually reboot
-    for(;;);
+    }    
 
     return 0;
+}
+
+unsigned int Thread::lower_priority_thread_at_cpu() {
+    assert(locked());
+
+    Thread * t = _scheduler.chosen_at(0);
+    if (t == nullptr) return 0;
+
+    unsigned int cpu_id = 0;
+    for (unsigned int i = 1; i < Traits<Machine>::CPUS; i++) {
+        Thread * temp_t = _scheduler.chosen_at(i);
+        if (temp_t == nullptr) return i;
+        if (t->priority() < temp_t->priority()) {
+            t = temp_t;
+            cpu_id = i;
+        }
+    }
+
+    return cpu_id;
 }
 
 void Thread::set_borrowed_priority(int p) {

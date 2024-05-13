@@ -21,9 +21,12 @@ public:
             return;
         }
 
-        if(Memory_Map::BOOT_STACK != Memory_Map::NOT_USED)
-            MMU::free(Memory_Map::BOOT_STACK, MMU::pages(Traits<Machine>::STACK_SIZE));
-
+        // ANNOTATION: Precisa ser feito por todo mundo?
+        if(Memory_Map::BOOT_STACK != Memory_Map::NOT_USED && CPU::id() == 0)
+            MMU::free(Memory_Map::BOOT_STACK, MMU::pages(Traits<Machine>::STACK_SIZE * Traits<Machine>::CPUS));
+        
+        CPU::smp_barrier();
+        
         db<Init>(INF) << "INIT ends here!" << endl;
 
         // Thread::self() and Task::self() can be safely called after the construction of MAIN
@@ -32,6 +35,8 @@ public:
         Thread * first = Thread::self();
 
         db<Init, Thread>(INF) << "Dispatching the first thread: " << first << endl;
+
+        CPU::smp_barrier();
 
         // Interrupts have been disabled at Thread::init() and will be reenabled by CPU::Context::load()
         // but we first reset the timer to avoid getting a time interrupt during load()

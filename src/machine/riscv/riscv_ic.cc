@@ -63,7 +63,7 @@ void IC::entry()
     CPU::iret();    
 }
 
-// ANNOTATION: handler de interrupção de tempo
+// ANNOTATION: handler de interrupção
 void IC::dispatch()
 {
     db<IC>(INF) << "\nIC::dispatch start -> mtime=" << mtime() <<" SP=" << CPU::sp() << " EPC=" << hex << CPU::epc() << endl;
@@ -84,6 +84,13 @@ void IC::dispatch()
             CPU::ecall();   // we can't clear CPU::sipc(CPU::STI) in supervisor mode, so let's ecall int_m2s to do it for us
         else
             Timer::reset(); // MIP.MTI is a direct logic on (MTIME == MTIMECMP) and reseting the Timer seems to be the only way to clear it
+    }
+
+    if(id == INT_RESCHEDULER) {
+        if (supervisor)
+            CPU::sipc(CPU::SSI);
+        else
+            ipi_eoi(id);
     }
 
     _int_vector[id](id);

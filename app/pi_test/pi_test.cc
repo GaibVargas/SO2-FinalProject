@@ -10,9 +10,9 @@ const unsigned int period_l = 200; // ms
 const unsigned int period_m = 150; // ms
 const unsigned int period_h = 100; // ms
 
-const unsigned int wcet_l = 10; // ms
-const unsigned int wcet_m = 20; // ms
-const unsigned int wcet_h = 30; // ms
+const unsigned int wcet_l = 60; // ms
+const unsigned int wcet_m = 70; // ms
+const unsigned int wcet_h = 80; // ms
 
 int func_l();
 int func_m();
@@ -60,17 +60,25 @@ int func_l()
         cout << "Low tries to get mutex 2" << endl;
         mutex2->lock();
         cout << "Low gets mutex 2" << endl;
-        if (!thread_m)
-        {
-            cout << "Low creates thread Medium" << endl;
-            thread_m = new Periodic_Thread(RTConf(period_m * 1000, 0, 0, 0, iterations, wcet_m * 1000), &func_m);
-        }
-        cout << "Executing low inside mutex 2 p(l) = " << thread_l->priority() << endl;
         if (!thread_h)
         {
             cout << "Low creates thread High " << endl;
             thread_h = new Periodic_Thread(RTConf(period_h * 1000, 0, 0, 0, iterations, wcet_h * 1000), &func_h);
         }
+        cout << "Executing low inside mutex 2 p(l) = " << thread_l->priority() << endl;
+        if (!thread_m)
+        {
+            cout << "Low creates thread Medium" << endl;
+            thread_m = new Periodic_Thread(RTConf(period_m * 1000, 0, 0, 0, iterations, wcet_m * 1000), &func_m);
+        }
+
+        Microsecond elapsed = chrono.read() / 1000;
+        for(Microsecond end = elapsed + wcet_l - 10, last = end; end > elapsed; elapsed = chrono.read() / 1000)
+            if(last != elapsed) {
+                cout << "Executing low inside mutex 2 p(l) = " << thread_l->priority() << endl;
+                last = elapsed;
+            }
+
         cout << "Executing low inside mutex 2 p(l) = " << thread_l->priority() << endl;
         cout << "Low releases mutex 2" << endl;
         mutex2->unlock();
@@ -94,6 +102,14 @@ int func_m()
         mutex1->lock();
         cout << "Medium gets mutex 1" << endl;
         cout << "Executing medium inside mutex 1" << endl;
+
+        Microsecond elapsed = chrono.read() / 1000;
+        for(Microsecond end = elapsed + wcet_m - 10, last = end; end > elapsed; elapsed = chrono.read() / 1000)
+            if(last != elapsed) {
+                cout << "Executing medium inside mutex 1" << endl;
+                last = elapsed;
+            }
+
         cout << "Medium releases mutex 1" << endl;
         mutex1->unlock();
         cout << "Medium job done" << endl;
@@ -112,6 +128,14 @@ int func_h()
         mutex2->lock();
         cout << "High gets mutex 2" << endl;
         cout << "Executing high inside mutex 2" << endl;
+
+        Microsecond elapsed = chrono.read() / 1000;
+        for(Microsecond end = elapsed + wcet_h - 10, last = end; end > elapsed; elapsed = chrono.read() / 1000)
+            if(last != elapsed) {
+                cout << "Executing high inside mutex 2" << endl;
+                last = elapsed;
+            }
+
         cout << "High releases mutex 2" << endl;
         mutex2->unlock();
         cout << "High job done" << endl;

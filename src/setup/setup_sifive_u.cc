@@ -23,6 +23,7 @@ extern "C" {
 
 __BEGIN_SYS
 
+static volatile bool bss_ready = false;
 extern OStream kout, kerr;
 
 class SV32_MMU;
@@ -99,36 +100,42 @@ private:
     void call_next();
 
 private:
+    static volatile bool ready;
     char * bi;
     System_Info * si;
     MMU mmu;
 };
 
-
+volatile bool Setup::ready = false;
 Setup::Setup()
 {
+    
     si = reinterpret_cast<System_Info *>(&__boot_time_system_info);
 
-    // SETUP doesn't handle global constructors, so we need to manually initialize any object with a non-empty default constructor
-    new (&kout) OStream;
-    new (&kerr) OStream;
-    Display::init();
-    kout << endl;
-    kerr << endl;
+    if (CPU::id() == 0) {
+        // SETUP doesn't handle global constructors, so we need to manually initialize any object with a non-empty default constructor
+        new (&kout) OStream;
+        new (&kerr) OStream;
+        Display::init();
+        kout << endl;
+        kerr << endl;
 
-    db<Setup>(TRC) << "Setup(si=" << reinterpret_cast<void *>(si) << ",sp=" << CPU::sp() << ")" << endl;
-    db<Setup>(INF) << "Setup:si=" << *si << endl;
+        db<Setup>(TRC) << "Setup(si=" << reinterpret_cast<void *>(si) << ",sp=" << CPU::sp() << ")" << endl;
+        db<Setup>(INF) << "Setup:si=" << *si << endl;
 
-    // Print basic facts about this EPOS instance
-    say_hi();
+        // Print basic facts about this EPOS instance
+        say_hi();
 
-    // Configure a flat memory model for the single task in the system
-    if (paging)
-        setup_flat_paging();
+        // Configure a flat memory model for the single task in the system
+        if (paging)
+            setup_flat_paging();
 
-    // Relocate the machine to supervisor interrupt forwarder
-    if (supervisor)
-        setup_m2s();
+        // Relocate the machine to supervisor interrupt forwarder
+        if (supervisor)
+            setup_m2s();
+    }
+    
+    CPU::smp_barrier();
 
     // Enable paging
     if (paging)
@@ -681,9 +688,14 @@ void _entry() // machine mode
     CPU::mstatusc(CPU::MIE);                            // disable interrupts (they will be reenabled at Init_End)
 
     CPU::tp(CPU::mhartid() - 1);                        // tp will be CPU::id() for supervisor mode; we won't count core 0, which is an heterogeneous E51
-    CPU::sp(Memory_Map::BOOT_STACK + Traits<Machine>::STACK_SIZE - sizeof(long)); // set the stack pointer, thus creating a stack for SETUP
+    CPU::sp(Memory_Map::BOOT_STACK + Traits<Machine>::STACK_SIZE * (CPU::id() + 1) - sizeof(long)); // set the stack pointer, thus creating a stack for SETUP
 
-    Machine::clear_bss();
+    if (CPU::id() == 0) {
+        Machine::clear_bss();
+        bss_ready = true;
+    }
+
+    while(!bss_ready);
 
     if (supervisor) {
         CPU::mtvec(CPU::INT_DIRECT, Memory_Map::INT_M2S);   // setup a machine mode interrupt handler to forward timer interrupts (which cannot be delegated via mideleg)
@@ -692,13 +704,14 @@ void _entry() // machine mode
         CPU::mstatus(CPU::MPP_S | CPU::MPIE | CPU::MXR);    // prepare jump into supervisor mode at MRET with interrupts enabled at machine level
         CPU::mstatusc(CPU::SIE);                            // disable interrupts (they will be reenabled at Init_End)
         CPU::sstatuss(CPU::SUM);                            // allows User Memory access in supervisor mode
+        CPU::mie(CPU::MSI | CPU::MTI | CPU::MEI);           // enable interrupt generation by at machine level before going into next mode
     } else {
         // ANNOTATION: 
         // Retira-se o CPU::MPIE que habilita as interrupções em modo machine
         CPU::mstatus(CPU::MPP_M | CPU::MXR);    // prepare jump into machine mode at MRET with interrupts disabled at machine level
+        CPU::mie(0);
     }
 
-    CPU::mie(CPU::MSI | CPU::MTI | CPU::MEI);           // enable interrupt generation by at machine level before going into next mode
     CLINT::mtimecmp(-1ULL);                             // configure MTIMECMP so it won't trigger a timer interrupt before we can setup_m2s()
 
     CPU::pmpcfg0(0b11111); 				// configure PMP region 0 as (L=unlocked [0], [00], A = NAPOT [11], X [1], W [1], R [1])
@@ -752,6 +765,9 @@ if(Traits<CPU>::WORD_SIZE == 32) {
     } else if(id == CPU::EXC_ENVS) {
         CPU::mipc(CPU::STI);                            // STI was handled in supervisor mode, so clear the corresponding pending bit
         CPU::mepc(CPU::mepc() + 4);
+    } else if((id & CLINT::INT_MASK) == CLINT::IRQ_MAC_SOFT) {
+        IC::ipi_eoi(id);
+        CPU::mips(CPU::SSI);
     }
 
     // Restore context
