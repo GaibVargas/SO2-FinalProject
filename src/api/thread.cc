@@ -122,7 +122,7 @@ void Thread::priority(const Criterion & c)
         _link.rank(c);
 
     if(preemptive)
-        reschedule();
+        call_cpu_reschedule();
 
     unlock();
 }

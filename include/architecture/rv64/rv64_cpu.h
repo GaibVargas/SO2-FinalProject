@@ -270,7 +270,7 @@ public:
         else
             ASM("li       t3, 1        \n"
                 "amoadd.w %0, t3, (%1) \n": "=&r"(old) : "r"(&value) : "t3", "memory");
-        return old - 1;
+        return old;
     }
 
     template<typename T>
@@ -282,7 +282,7 @@ public:
         else
             ASM("li       t3, -1        \n"
                 "amoadd.w %0, t3, (%1) \n": "=&r"(old) : "r"(&value) : "t3", "memory");
-        return old + 1;
+        return old;
     }
 
     template <typename T>
