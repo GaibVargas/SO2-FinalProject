@@ -36,8 +36,10 @@ void Semaphore::v()
     begin_atomic();
     if(finc(_value) < 0)
         wakeup();
-    else
+    else {
         release_synchronyzer(Thread::running());
+        Thread::call_cpu_reschedule();
+    }
     end_atomic();
 }
 

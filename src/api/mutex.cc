@@ -37,6 +37,7 @@ void Mutex::unlock()
     if(_queue.empty()) {
         _locked = false;
         release_synchronyzer(Thread::running());
+        Thread::call_cpu_reschedule();
     }
     else
         wakeup();
