@@ -13,6 +13,7 @@ class CPU: protected CPU_Common
 
 private:
     static const bool supervisor = Traits<Machine>::supervisor;
+    static volatile int cas_lock;
 
 public:
     // CPU Native Data Types
@@ -289,17 +290,31 @@ public:
     static T cas(volatile T & value, T compare, T replacement) {
         register T old;
         if(sizeof(T) == sizeof(Reg64))
-            ASM("1: lr.d    %0, (%1)        \n"
-                "   bne     %0, %2, 2f      \n"
-                "   sc.d    t3, %3, (%1)    \n"
-                "   bnez    t3, 1b          \n"
-                "2:                         \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement) : "t3", "cc", "memory");
+            ASM("   li            t3, 1 \n"
+                "1: amoswap.w.aq  t3, t3, (%4) \n"
+                "   bnez          t3, 1b       \n"
+                "   ld     %0, (%1) \n"
+                "   bne    %0, %2, 2f       \n"
+                "   sd     %3, (%1) \n"
+                "2: amoswap.w.rl  t3, t3, (%4)\n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement), "r"(&cas_lock) : "t3", "cc", "memory");
+            // ASM("1: lr.d    %0, (%1)        \n"
+            //     "   bne     %0, %2, 2f      \n"
+            //     "   sc.d    t3, %3, (%1)    \n"
+            //     "   bnez    t3, 1b          \n"
+            //     "2:                         \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement) : "t3", "cc", "memory");
         else
-            ASM("1: lr.w    %0, (%1)        \n"
-                "   bne     %0, %2, 2f      \n"
-                "   sc.w    t3, %3, (%1)    \n"
-                "   bnez    t3, 1b          \n"
-                "2:                         \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement) : "t3", "cc", "memory");
+            ASM("   li            t3, 1 \n"
+                "1: amoswap.w.aq  t3, t3, (%4) \n"
+                "   bnez          t3, 1b       \n"
+                "   lw     %0, (%1) \n"
+                "   bne    %0, %2, 2f       \n"
+                "   sw     %3, (%1) \n"
+                "2: amoswap.w.rl  t3, t3, (%4)\n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement), "r"(&cas_lock) : "t3", "cc", "memory");
+            // ASM("1: lr.w    %0, (%1)        \n"
+            //     "   bne     %0, %2, 2f      \n"
+            //     "   sc.w    t3, %3, (%1)    \n"
+            //     "   bnez    t3, 1b          \n"
+            //     "2:                         \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement) : "t3", "cc", "memory");
         return old;
     }
 
