@@ -1286,6 +1286,7 @@ public:
     bool empty() const { return _list[R::current_queue()].empty(); }
 
     unsigned long size() const { return _list[R::current_queue()].size(); }
+    unsigned long size_at(unsigned int i) const { return _list[i].size(); }
     unsigned long total_size() const {
         unsigned long s = 0;
         for(unsigned int i = 0; i < Q; i++)
@@ -1337,6 +1338,11 @@ public:
         }
 
         return _list[e->rank().queue()].choose(e);
+    }
+
+    Element * volatile chosen_at(unsigned int cpu) {
+        if (cpu < 0 || cpu > Traits<Machine>::CPUS) return nullptr;
+        return _list[cpu].chosen();
     }
 
 private:

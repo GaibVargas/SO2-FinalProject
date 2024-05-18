@@ -105,6 +105,8 @@ protected:
     void constructor_prologue(unsigned int stack_size);
     void constructor_epilogue(Log_Addr entry, unsigned int stack_size);
 
+    void set_scheduler_queue();
+
     Criterion & criterion() { return const_cast<Criterion &>(_link.rank()); }
     Queue::Element * link() { return &_link; }
 
@@ -130,10 +132,10 @@ protected:
     static void wakeup(Queue * q);
     static void wakeup_all(Queue * q);
 
-    static void update_priorities();
+    static void update_priorities(unsigned int i = CPU::id());
     static void reschedule();
     static void rescheduler(IC::Interrupt_Id i);
-    static void call_cpu_reschedule();
+    static void call_cpu_reschedule(unsigned int cpu = CPU::id());
     static unsigned int lower_priority_thread_at_cpu();
 
     static void dispatch(Thread * prev, Thread * next, bool charge = true);

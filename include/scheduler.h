@@ -117,12 +117,17 @@ public:
 
     operator const volatile int() const volatile { return _priority; }
     static unsigned int current_head() { return CPU::id(); }
+    static unsigned int current_queue() { return CPU::id(); }
+    const volatile unsigned int & queue() const volatile { return _queue; }
+    void set_queue(unsigned int i) { _queue = i; }
 
 public:
     static const unsigned int HEADS = Traits<Machine>::CPUS;
+    static const unsigned int QUEUES = Traits<Machine>::CPUS;
 
 protected:
     volatile int _priority;
+    volatile unsigned int _queue;
 };
 
 // Round-Robin
