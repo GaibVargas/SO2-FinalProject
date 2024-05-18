@@ -20,7 +20,11 @@ void Thread::constructor_prologue(unsigned int stack_size)
     lock();
 
     _thread_count++;
-    set_scheduler_queue();
+    if (!_not_booting)
+        criterion().set_queue(CPU::id());
+    else
+        set_scheduler_queue();
+   
     update_priorities(criterion().queue());
     _scheduler.insert(this);
 
@@ -112,6 +116,7 @@ Thread::~Thread()
 
 void Thread::set_scheduler_queue()
 {
+    assert(locked());
     unsigned int smaller_queue_index = 0;
     unsigned int smaller_queue_size = _scheduler.schedulables_at(0);
     for (unsigned int i = 1; i < Traits<Machine>::CPUS; i++) {
@@ -468,6 +473,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 
 int Thread::idle()
 {
+    db<Thread>(WRN) << "Ç" << endl; 
     db<Thread>(TRC) << "Thread::idle(this=" << running() << ")" << endl;
     while(_thread_count > Traits<Machine>::CPUS) { // someone else besides idle
         if(Traits<Thread>::trace_idle)
