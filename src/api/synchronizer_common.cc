@@ -40,32 +40,23 @@ void Synchronizer_Common::release_synchronyzer(Thread *t) {
     auto link_running = _running_queue.remove(t);
     delete link_running;
 
-    auto link_modified = _modified_threads.remove(t);
-    if (!link_modified) return;
-    delete link_modified;
-    t->remove_synchronizer_modified_queue(&_modified_threads);
-    set_next_priority(t);
+    set_all_next_priority(t);
 }
 
 void Synchronizer_Common::pass_priority_to_threads(Thread *t) {
     assert(Thread::locked());
     if (Traits<Thread>::priority_inversion_protocol == Traits<Build>::NOT) return;
 
-    // ANNOTATION: a thread de prioridade mais alta dentro da região crítica, com prioridade mais baixa que t
-    Thread *prioritize_thread = nullptr;
+    // ANNOTATION: sobe a prioridade de todas as threads de prioridade mais baixa dentro do synchronyzer
     for (auto i = _running_queue.begin(); i != _running_queue.end(); i++) {
-        if (i->object()->priority() > t->priority()) {
-            if (prioritize_thread == nullptr)
-                prioritize_thread = i->object();
-            else if (prioritize_thread->priority() > i->object()->priority())
-                prioritize_thread = i->object();
-        }
-    }
-    if (prioritize_thread) {
-        prioritize_thread->set_borrowed_priority(t->priority());
-        if (!_modified_threads.search(prioritize_thread)) {
-            _modified_threads.insert(new Thread_List_Element(prioritize_thread));
-            prioritize_thread->insert_synchronizer_modified_queue(&_modified_threads);
+        Thread *prioritize_thread = i->object();
+        if (prioritize_thread->priority() > t->priority()) {
+            prioritize_thread->set_borrowed_priority(t->priority());
+
+            if (!_modified_threads.search(prioritize_thread)) {
+                _modified_threads.insert(new Thread_List_Element(prioritize_thread));
+                prioritize_thread->insert_synchronizer_modified_queue(&_modified_threads);
+            }
         }
     }
 }
@@ -95,6 +86,64 @@ void Synchronizer_Common::remove_all_lent_priorities() {
         delete i;
         i = next;
     }
+}
+
+void Synchronizer_Common::set_all_next_priority(Thread *thread_released)
+{
+    assert(Thread::locked());
+
+    if (_modified_threads.size() < 1) return;
+
+    for (auto i = _modified_threads.begin(); i != _modified_threads.end(); i++) {
+        auto t = i->object();
+        t->criterion().set_original_priority();
+
+        int highest_priority = t->priority();
+        Synchronizer_Common * from_sync = nullptr;
+
+        for (auto s = t->_synchronizers.begin(); s != t->_synchronizers.end(); s++) {
+            Synchronizer_Common *sync = s->object();
+
+            if (sync == this && thread_released == t) continue;
+
+            sync->update_waiting_queue_priorities();
+
+            Thread * t_sync;
+            if (sync == this)
+                t_sync = get_next_head_waiting();
+            else 
+                t_sync = sync->get_head_waiting();
+
+            if (t_sync == nullptr) continue;
+
+            if (t_sync->priority() < highest_priority) {
+                highest_priority = t_sync->priority();
+                from_sync = sync;
+            }
+        }
+
+        if (highest_priority == t->priority()) return;
+        t->criterion().set_borrowed_priority(highest_priority);
+
+        if (from_sync != this) {
+            auto link_modified = _modified_threads.remove(t);
+
+            delete link_modified;
+            t->remove_synchronizer_modified_queue(&_modified_threads);
+        }
+
+        if (!from_sync->_modified_threads.search(t)) {
+            from_sync->_modified_threads.insert(new Thread_List_Element(t));
+            t->insert_synchronizer_modified_queue(&from_sync->_modified_threads);
+        }
+
+        if (t->state() == Thread::READY) {
+            t->_scheduler.remove(t);
+            t->_scheduler.insert(t);
+        }
+
+    }
+
 }
 
 // Seleciona a próxima prioridade da thread no momento em que ela deixa o sincronizador.
@@ -142,6 +191,12 @@ Thread* Synchronizer_Common::get_head_waiting() {
     auto element = _queue.head();
     if (!element) return nullptr;
     return element->object();
+}
+
+Thread* Synchronizer_Common::get_next_head_waiting() {
+    auto element = _queue.head();
+    if (!element || !element->next()) return nullptr;
+    return element->next()->object();
 }
 
 __END_SYS

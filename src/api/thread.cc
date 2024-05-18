@@ -473,7 +473,6 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 
 int Thread::idle()
 {
-    db<Thread>(WRN) << "Ç" << endl; 
     db<Thread>(TRC) << "Thread::idle(this=" << running() << ")" << endl;
     while(_thread_count > Traits<Machine>::CPUS) { // someone else besides idle
         if(Traits<Thread>::trace_idle)

@@ -45,11 +45,13 @@ protected:
 
     void acquire_synchronyzer(Thread * t);
     void release_synchronyzer(Thread * t);
-    void set_next_priority(Thread * t);
+    void set_next_priority(Thread *t);
+    void set_all_next_priority(Thread *thread_released);
     void pass_priority_to_threads(Thread * t);
     void remove_all_lent_priorities();
     void update_waiting_queue_priorities();
     Thread* get_head_waiting();
+    Thread* get_next_head_waiting();
 
 protected:
     Queue _queue;
