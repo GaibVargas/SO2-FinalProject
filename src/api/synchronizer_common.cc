@@ -47,6 +47,9 @@ void Synchronizer_Common::pass_priority_to_threads(Thread *t) {
     assert(Thread::locked());
     if (Traits<Thread>::priority_inversion_protocol == Traits<Build>::NOT) return;
 
+    for (auto i = 0U; i < Traits<Machine>::CPUS; i++)
+        Thread::update_priorities(i);
+
     // ANNOTATION: sobe a prioridade de todas as threads de prioridade mais baixa dentro do synchronyzer
     for (auto i = _running_queue.begin(); i != _running_queue.end(); i++) {
         Thread *prioritize_thread = i->object();
@@ -57,7 +60,17 @@ void Synchronizer_Common::pass_priority_to_threads(Thread *t) {
                 _modified_threads.insert(new Thread_List_Element(prioritize_thread));
                 prioritize_thread->insert_synchronizer_modified_queue(&_modified_threads);
             }
+
+            if (prioritize_thread->_state == Thread::READY) {
+                Thread::_scheduler.remove(prioritize_thread);
+                Thread::_scheduler.insert(prioritize_thread);
+            }
         }
+    }
+
+    for (auto i = 0U; i < Traits<Machine>::CPUS; i++) {
+        if (CPU::id() != i)
+            IC::ipi(i, IC::INT_RESCHEDULER);
     }
 }
 
@@ -86,6 +99,11 @@ void Synchronizer_Common::remove_all_lent_priorities() {
         delete i;
         i = next;
     }
+
+    for (auto i = 0U; i < Traits<Machine>::CPUS; i++) {
+        if (CPU::id() != i)
+            IC::ipi(i, IC::INT_RESCHEDULER);
+    }
 }
 
 void Synchronizer_Common::set_all_next_priority(Thread *thread_released)
@@ -93,6 +111,9 @@ void Synchronizer_Common::set_all_next_priority(Thread *thread_released)
     assert(Thread::locked());
 
     if (_modified_threads.size() < 1) return;
+
+    for (auto i = 0U; i < Traits<Machine>::CPUS; i++)
+        Thread::update_priorities(i);
 
     for (auto i = _modified_threads.begin(); i != _modified_threads.end(); i++) {
         auto t = i->object();
@@ -141,7 +162,11 @@ void Synchronizer_Common::set_all_next_priority(Thread *thread_released)
             t->_scheduler.remove(t);
             t->_scheduler.insert(t);
         }
+    }
 
+    for (auto i = 0U; i < Traits<Machine>::CPUS; i++) {
+        if (CPU::id() != i)
+            IC::ipi(i, IC::INT_RESCHEDULER);
     }
 
 }
@@ -177,8 +202,10 @@ void Synchronizer_Common::set_next_priority(Thread *t) {
 
     if (t->state() == Thread::READY) {
         t->_scheduler.remove(t);
+        t->update_priorities(t->criterion().queue());
         t->_scheduler.insert(t);
     }
+    
 }
 
 void Synchronizer_Common::update_waiting_queue_priorities() {

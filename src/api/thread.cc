@@ -337,7 +337,6 @@ void Thread::wakeup_all(Queue * q)
 
     assert(locked()); // locking handled by caller
 
-
     if(!q->empty()) {
         for (unsigned int i = 0; i < Traits<Machine>::CPUS; i++) {
             update_priorities(i);
