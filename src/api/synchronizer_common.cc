@@ -114,7 +114,6 @@ void Synchronizer_Common::set_all_next_priority(Thread *thread_released)
     for (auto i = 0U; i < Traits<Machine>::CPUS; i++)
         Thread::update_priorities(i);
 
-    db<Thread>(WRN) << "W " << _modified_threads.size() << endl;
     for (auto i = _modified_threads.begin(); i != _modified_threads.end(); i++) {
         auto t = i->object();
         t->criterion().set_original_priority();
@@ -143,13 +142,10 @@ void Synchronizer_Common::set_all_next_priority(Thread *thread_released)
             }
         }
 
-        if (highest_priority == t->priority()) return;
+        if (highest_priority == t->priority()) continue;
         t->criterion().set_borrowed_priority(highest_priority);
 
         if (from_sync != this) {
-            auto link_modified = _modified_threads.remove(t);
-
-            delete link_modified;
             t->remove_synchronizer_modified_queue(&_modified_threads);
         }
 
@@ -169,6 +165,16 @@ void Synchronizer_Common::set_all_next_priority(Thread *thread_released)
             IC::ipi(i, IC::INT_RESCHEDULER);
     }
 
+    for (auto i = _modified_threads.begin(); i != _modified_threads.end();) {
+        auto t = i->object();
+        if (!t->_synchronizer_modified_queue.search(&_modified_threads)) {
+            auto next = i->next();
+            _modified_threads.remove(t);
+            delete i;
+            i = next;
+        } else
+            i = i->next();
+    }
 }
 
 // Seleciona a próxima prioridade da thread no momento em que ela deixa o sincronizador.

@@ -5,17 +5,17 @@
 
 using namespace EPOS;
 
-const unsigned int iterations = 1;
+const unsigned int iterations = 0;
 const unsigned int for_time_low1 = 30; // ms
-const unsigned int for_time_low2 = 20; // ms
-const unsigned int for_time_high = 50; // ms
-const unsigned int period_l = 2 * for_time_high + 100; // ms
-const unsigned int period_m = 2 * for_time_high + 100; // ms
-const unsigned int period_h = 2 * for_time_high + 100; // ms
+const unsigned int for_time_low2 = 30; // ms
+const unsigned int for_time_high = 30; // ms
+const unsigned int period_l = 100000; // ms
+const unsigned int period_m = 10000; // ms
+const unsigned int period_h = 1000; // ms
 
-const unsigned int wcet_l = 2 * for_time_high + 50; // ms
-const unsigned int wcet_m = 2 * for_time_high + 100; // ms // ms
-const unsigned int wcet_h = 2 * for_time_high + 150; // ms
+const unsigned int wcet_l = 50; // ms
+const unsigned int wcet_m = 50; // ms // ms
+const unsigned int wcet_h = 50; // ms
 
 int func_l0();
 int func_l1();
