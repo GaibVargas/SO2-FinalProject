@@ -17,6 +17,7 @@ const unsigned int wcet_l = 2 * for_time_high + 50; // ms
 const unsigned int wcet_m = 2 * for_time_high + 100; // ms // ms
 const unsigned int wcet_h = 2 * for_time_high + 150; // ms
 
+int func_l0();
 int func_l1();
 int func_l2();
 int func_m();
@@ -25,6 +26,7 @@ long max(unsigned int a, unsigned int b, unsigned int c) { return ((a >= b) && (
 
 OStream cout;
 Chronometer chrono;
+Periodic_Thread * thread_l0; // low0
 Periodic_Thread * thread_l1; // low1
 Periodic_Thread * thread_l2; // low2
 Periodic_Thread * thread_m; // medium
@@ -37,12 +39,13 @@ int main()
 {
     cout << "Testing PCP..." << endl;
 
-    sem1 = new Semaphore(3);
-    sem2 = new Semaphore(2);
-    thread_l1 = new Periodic_Thread(RTConf(period_l * 1000, 0, 0, 0, iterations, wcet_l * 1000), &func_l1);
+    sem1 = new Semaphore(4);
+    sem2 = new Semaphore(3);
+    thread_l0 = new Periodic_Thread(RTConf(period_l * 1000, 0, 0, 0, iterations, wcet_l * 1000), &func_l0);
 
     chrono.start();
 
+    thread_l0->join();
     thread_l1->join();
     thread_l2->join();
     thread_m->join();
@@ -52,6 +55,49 @@ int main()
 
     cout << "I'm also done, bye!" << endl;
 
+    return 0;
+}
+
+int func_l0()
+{
+    do {
+        cout << "Executing low0" << endl;
+        cout << "Executing low0" << endl;
+        cout << "Low0 tries to get semaphore 1" << endl;
+        sem1->p();
+        cout << "Low0 gets semaphore 1" << endl;
+        cout << "Low0 tries to get semaphore 2" << endl;
+        sem2->p();
+        cout << "Low0 gets semaphore 2" << endl;
+        if (!thread_l1) {
+            cout << "Create thread Low1" << endl;
+            thread_l1 = new Periodic_Thread(RTConf(period_l * 1000, 0, 0, 0, iterations, wcet_h * 1000), &func_l1);
+        }
+        Microsecond elapsed1 = chrono.read() / 1000;
+        for(Microsecond end = elapsed1 + for_time_low1, last = end; end > elapsed1; elapsed1 = chrono.read() / 1000)
+            if(last != elapsed1) {
+                if (elapsed1%2 == 0)
+                    cout << "Executing low0 inside sem2 p(l) = " << thread_l0->priority() << endl;
+                last = elapsed1;
+            }
+
+        cout << "Low0 releases semaphore 2" << endl;
+        sem2->v();
+
+        Microsecond elapsed2 = chrono.read() / 1000;
+        for(Microsecond end = elapsed2 + for_time_low1, last = end; end > elapsed2; elapsed2 = chrono.read() / 1000)
+            if(last != elapsed2) {
+                if (elapsed2%2 == 0)
+                    cout << "Executing low0 inside sem1 p(l) = " << thread_l0->priority() << endl;
+                last = elapsed2;
+            }
+
+        cout << "Low0 releases semaphore 1" << endl;
+        sem1->v();
+        cout << "Executing low0 p(l) = " << thread_l0->priority() << endl;
+        cout << "Low0 done" << endl;
+    } while (Periodic_Thread::wait_next());
+    cout << "Low0 finish" << endl;
     return 0;
 }
 
@@ -66,7 +112,7 @@ int func_l1()
         cout << "Low1 tries to get semaphore 2" << endl;
         sem2->p();
         cout << "Low1 gets semaphore 2" << endl;
-        if (!thread_m) {
+        if (!thread_l2) {
             cout << "Create thread Low2" << endl;
             thread_l2 = new Periodic_Thread(RTConf(period_l * 1000, 0, 0, 0, iterations, wcet_h * 1000), &func_l2);
         }

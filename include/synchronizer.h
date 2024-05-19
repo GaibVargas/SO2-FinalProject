@@ -55,8 +55,8 @@ protected:
 
 protected:
     Queue _queue;
-    Thread_List _running_queue;
-    Thread_List _modified_threads;
+    Thread_List * _running_queue = new Thread_List();
+    Thread_List * _modified_threads = new Thread_List();
 };
 
 

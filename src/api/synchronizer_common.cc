@@ -24,20 +24,20 @@ void Synchronizer_Common::acquire_synchronyzer(Thread *t) {
     if (Traits<Thread>::priority_inversion_protocol == Traits<Build>::NOT) return;
 
     auto link_thread = new Thread_List_Element(t);
-    _running_queue.insert(link_thread);
+    _running_queue->insert(link_thread);
 
     t->insert_synchronizer(this);
-    t->insert_synchronizer_running_queue(&_running_queue);
+    t->insert_synchronizer_running_queue(_running_queue);
 }
 
 void Synchronizer_Common::release_synchronyzer(Thread *t) {
     assert(Thread::locked());
     if (Traits<Thread>::priority_inversion_protocol == Traits<Build>::NOT) return;
 
-    t->remove_synchronizer_running_queue(&_running_queue);
+    t->remove_synchronizer_running_queue(_running_queue);
     t->remove_synchronizer(this);
 
-    auto link_running = _running_queue.remove(t);
+    auto link_running = _running_queue->remove(t);
     delete link_running;
 
     set_all_next_priority(t);
@@ -51,14 +51,13 @@ void Synchronizer_Common::pass_priority_to_threads(Thread *t) {
         Thread::update_priorities(i);
 
     // ANNOTATION: sobe a prioridade de todas as threads de prioridade mais baixa dentro do synchronyzer
-    for (auto i = _running_queue.begin(); i != _running_queue.end(); i++) {
+    for (auto i = _running_queue->begin(); i != _running_queue->end(); i++) {
         Thread *prioritize_thread = i->object();
         if (prioritize_thread->priority() > t->priority()) {
             prioritize_thread->set_borrowed_priority(t->priority());
-
-            if (!_modified_threads.search(prioritize_thread)) {
-                _modified_threads.insert(new Thread_List_Element(prioritize_thread));
-                prioritize_thread->insert_synchronizer_modified_queue(&_modified_threads);
+            if (!_modified_threads->search(prioritize_thread)) {
+                _modified_threads->insert(new Thread_List_Element(prioritize_thread));
+                prioritize_thread->insert_synchronizer_modified_queue(_modified_threads);
             }
 
             if (prioritize_thread->_state == Thread::READY) {
@@ -68,6 +67,7 @@ void Synchronizer_Common::pass_priority_to_threads(Thread *t) {
         }
     }
 
+    db<Thread>(WRN) << "W " << _modified_threads->size() << endl;
     for (auto i = 0U; i < Traits<Machine>::CPUS; i++) {
         if (CPU::id() != i)
             IC::ipi(i, IC::INT_RESCHEDULER);
@@ -78,23 +78,23 @@ void Synchronizer_Common::remove_all_lent_priorities() {
     assert(Thread::locked());
     if (Traits<Thread>::priority_inversion_protocol == Traits<Build>::NOT) return;
 
-    for (auto i = _running_queue.begin(); i != _running_queue.end(); i++) {
+    for (auto i = _running_queue->begin(); i != _running_queue->end(); i++) {
         auto t = i->object(); 
         t->remove_synchronizer(this);
-        t->remove_synchronizer_running_queue(&_running_queue);
+        t->remove_synchronizer_running_queue(_running_queue);
 
-        if (_modified_threads.search(t)) {
+        if (_modified_threads->search(t)) {
             t->remove_borrowed_priority();
-            t->remove_synchronizer_modified_queue(&_modified_threads);
+            t->remove_synchronizer_modified_queue(_modified_threads);
             set_next_priority(t);
         }
     }
-    for (auto i = _running_queue.begin(); i != _running_queue.end();) {
+    for (auto i = _running_queue->begin(); i != _running_queue->end();) {
         auto next = i->next();
         delete i;
         i = next;
     }
-    for (auto i = _modified_threads.begin(); i != _modified_threads.end();) {
+    for (auto i = _modified_threads->begin(); i != _modified_threads->end();) {
         auto next = i->next();
         delete i;
         i = next;
@@ -110,12 +110,12 @@ void Synchronizer_Common::set_all_next_priority(Thread *thread_released)
 {
     assert(Thread::locked());
 
-    if (_modified_threads.size() < 1) return;
+    if (_modified_threads->size() < 1) return;
 
     for (auto i = 0U; i < Traits<Machine>::CPUS; i++)
         Thread::update_priorities(i);
 
-    for (auto i = _modified_threads.begin(); i != _modified_threads.end(); i++) {
+    for (auto i = _modified_threads->begin(); i != _modified_threads->end(); i++) {
         auto t = i->object();
         t->criterion().set_original_priority();
 
@@ -147,15 +147,15 @@ void Synchronizer_Common::set_all_next_priority(Thread *thread_released)
         t->criterion().set_borrowed_priority(highest_priority);
 
         if (from_sync != this) {
-            auto link_modified = _modified_threads.remove(t);
+            auto link_modified = _modified_threads->remove(t);
 
             delete link_modified;
-            t->remove_synchronizer_modified_queue(&_modified_threads);
+            t->remove_synchronizer_modified_queue(_modified_threads);
         }
 
-        if (!from_sync->_modified_threads.search(t)) {
-            from_sync->_modified_threads.insert(new Thread_List_Element(t));
-            t->insert_synchronizer_modified_queue(&from_sync->_modified_threads);
+        if (!from_sync->_modified_threads->search(t)) {
+            from_sync->_modified_threads->insert(new Thread_List_Element(t));
+            t->insert_synchronizer_modified_queue(from_sync->_modified_threads);
         }
 
         if (t->state() == Thread::READY) {
@@ -195,9 +195,9 @@ void Synchronizer_Common::set_next_priority(Thread *t) {
 
     if (highest_priority == t->priority()) return;
     t->criterion().set_borrowed_priority(highest_priority);
-    if (!from_sync->_modified_threads.search(t)) {
-        from_sync->_modified_threads.insert(new Thread_List_Element(t));
-        t->insert_synchronizer_modified_queue(&from_sync->_modified_threads);
+    if (!from_sync->_modified_threads->search(t)) {
+        from_sync->_modified_threads->insert(new Thread_List_Element(t));
+        t->insert_synchronizer_modified_queue(from_sync->_modified_threads);
     }
 
     if (t->state() == Thread::READY) {
