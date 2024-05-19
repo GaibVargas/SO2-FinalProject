@@ -185,6 +185,8 @@ void Thread::pass()
 
     db<Thread>(TRC) << "Thread::pass(this=" << this << ")" << endl;
 
+    if (_state == RUNNING) return unlock();
+
     Thread * prev = running();
     prev->criterion().update_total_execution_time();
     _scheduler.remove(this);

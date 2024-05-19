@@ -67,7 +67,6 @@ void Synchronizer_Common::pass_priority_to_threads(Thread *t) {
         }
     }
 
-    db<Thread>(WRN) << "W " << _modified_threads->size() << endl;
     for (auto i = 0U; i < Traits<Machine>::CPUS; i++) {
         if (CPU::id() != i)
             IC::ipi(i, IC::INT_RESCHEDULER);
@@ -143,7 +142,7 @@ void Synchronizer_Common::set_all_next_priority(Thread *thread_released)
             }
         }
 
-        if (highest_priority == t->priority()) return;
+        if (highest_priority == t->priority()) continue;
         t->criterion().set_borrowed_priority(highest_priority);
 
         if (from_sync != this) {
