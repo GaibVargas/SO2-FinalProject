@@ -76,7 +76,7 @@ int func_l0()
         Microsecond elapsed1 = chrono.read() / 1000;
         for(Microsecond end = elapsed1 + for_time_low1, last = end; end > elapsed1; elapsed1 = chrono.read() / 1000)
             if(last != elapsed1) {
-                if (elapsed1%2 == 0)
+                if (elapsed1%11 == 0)
                     cout << "Executing low0 inside sem2 p(l) = " << thread_l0->priority() << endl;
                 last = elapsed1;
             }
@@ -87,7 +87,7 @@ int func_l0()
         Microsecond elapsed2 = chrono.read() / 1000;
         for(Microsecond end = elapsed2 + for_time_low1, last = end; end > elapsed2; elapsed2 = chrono.read() / 1000)
             if(last != elapsed2) {
-                if (elapsed2%2 == 0)
+                if (elapsed2%11 == 0)
                     cout << "Executing low0 inside sem1 p(l) = " << thread_l0->priority() << endl;
                 last = elapsed2;
             }
