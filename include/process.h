@@ -136,7 +136,6 @@ protected:
     static void reschedule();
     static void rescheduler(IC::Interrupt_Id i);
     static void call_cpu_reschedule(unsigned int cpu = CPU::id());
-    static unsigned int lower_priority_thread_at_cpu();
 
     static void dispatch(Thread * prev, Thread * next, bool charge = true);
 

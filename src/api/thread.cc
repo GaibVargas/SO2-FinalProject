@@ -135,12 +135,15 @@ void Thread::priority(const Criterion & c)
     lock();
     db<Thread>(TRC) << "Thread::priority(this=" << this << ",prio=" << c << ")" << endl;
 
+    // ANNOTATION: Se for Finishing, Waiting
     if(_state == READY) { // reorder the scheduling queue
         _scheduler.remove(this);
         _link.rank(c);
         _scheduler.insert(this);
     } else
         _link.rank(c);
+
+    //TODO: Ver a possibilidade de mudar de fila de acordo com o criterion passado
 
     if(preemptive)
         call_cpu_reschedule(criterion().queue());
@@ -184,6 +187,12 @@ void Thread::pass()
     lock();
 
     db<Thread>(TRC) << "Thread::pass(this=" << this << ")" << endl;
+
+    if (_state != READY) {
+        db<Thread>(WRN) << "Thread is not READY" << endl; 
+        unlock();
+        return;
+    }
 
     Thread * prev = running();
     prev->criterion().update_total_execution_time();
@@ -281,7 +290,10 @@ void Thread::exit(int status)
     if(prev->_joining) {
         prev->_joining->_state = READY;
         prev->_joining->set_scheduler_queue();
+        update_priorities(prev->_joining->criterion().queue());
         _scheduler.resume(prev->_joining);
+        if (prev->_joining->criterion().queue() != CPU::id())
+            call_cpu_reschedule(prev->_joining->criterion().queue());
         prev->_joining = 0;
     }
 
@@ -353,7 +365,6 @@ void Thread::wakeup_all(Queue * q)
             _scheduler.resume(t);
         }
 
-        // ANNOTATION: Demais threads acordadas serão escalonadas no Quantum, se necessário
         if(preemptive) {
             for (unsigned int i = 0; i < Traits<Machine>::CPUS; i++) {
                 call_cpu_reschedule(i);
@@ -368,7 +379,6 @@ void Thread::call_cpu_reschedule(unsigned int cpu)
 
     if (Traits<Machine>::CPUS == 1) return reschedule();
 
-    // auto cpu_id = lower_priority_thread_at_cpu();
     if (cpu == CPU::id()) return reschedule();
 
     IC::ipi(cpu, IC::INT_RESCHEDULER);
@@ -398,10 +408,10 @@ void Thread::reschedule()
 
     // Atualiza prioridade da thread, e ordena fila de threads para inserção em ordem correta
     prev->criterion().update_total_execution_time();
-    if(dynamic) {
+    if(dynamic)
         prev->criterion().update_priority();
-        update_priorities();
-    }
+
+    update_priorities();
 
     Thread * next = _scheduler.choose(); // insere _chosen anterior na fila
     dispatch(prev, next);
@@ -498,25 +508,6 @@ int Thread::idle()
     }    
 
     return 0;
-}
-
-unsigned int Thread::lower_priority_thread_at_cpu() {
-    assert(locked());
-
-    Thread * t = _scheduler.chosen_at(0);
-    if (t == nullptr) return 0;
-
-    unsigned int cpu_id = 0;
-    for (unsigned int i = 1; i < Traits<Machine>::CPUS; i++) {
-        Thread * temp_t = _scheduler.chosen_at(i);
-        if (temp_t == nullptr) return i;
-        if (t->priority() < temp_t->priority()) {
-            t = temp_t;
-            cpu_id = i;
-        }
-    }
-
-    return cpu_id;
 }
 
 void Thread::set_borrowed_priority(int p) {
