@@ -337,8 +337,17 @@ void Thread::wakeup(Queue * q)
         update_priorities(t->criterion().queue());
         _scheduler.resume(t);
 
-        if(preemptive)
-            call_cpu_reschedule(t->criterion().queue());
+        // Chama reschecule para o própria cpu, caso a thread acordada esteja em outra fila.
+        // Especialmente necessário caso a thread que libera o sincronizador esteja com a prioridade modificada.
+        if(preemptive) {
+            if (t->criterion().queue() != CPU::id()) {
+                call_cpu_reschedule(t->criterion().queue());
+                update_priorities();
+                call_cpu_reschedule();
+            } else {
+                call_cpu_reschedule(t->criterion().queue());
+            }
+        }
     }
 }
 
