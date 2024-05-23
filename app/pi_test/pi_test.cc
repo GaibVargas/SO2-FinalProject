@@ -46,6 +46,12 @@ int main()
 
     cout << "I'm also done, bye!" << endl;
 
+    delete thread_l;
+    delete thread_m;
+    delete thread_h;
+    delete mutex1;
+    delete mutex2;
+
     return 0;
 }
 

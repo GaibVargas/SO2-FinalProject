@@ -94,6 +94,10 @@ int main()
 
     cout << "I'm also done, bye!" << endl;
 
+    delete thread_a;
+    delete thread_b;
+    delete thread_c;
+
     return 0;
 }
 

@@ -35,7 +35,7 @@ Semaphore * sem2;
 
 int main()
 {
-    cout << "Testing PI..." << endl;
+    cout << "Testando PI multicore..." << endl;
 
     sem1 = new Semaphore(4);
     sem2 = new Semaphore(3);
@@ -52,6 +52,14 @@ int main()
     chrono.stop();
 
     cout << "I'm also done, bye!" << endl;
+
+    delete thread_l0;
+    delete thread_l1;
+    delete thread_l2;
+    delete thread_m;
+    delete thread_h;
+    delete sem1;
+    delete sem2;
 
     return 0;
 }

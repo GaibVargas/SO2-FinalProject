@@ -26,7 +26,7 @@ Mutex * mux;
 
 int main()
 {
-    cout << "Testing Reorder..." << endl;
+    cout << "Testando wakeup dos sincronizadores..." << endl;
 
     mux = new Mutex();
     thread_h = new Periodic_Thread(RTConf(period_h * 1000, 0, 0, 0, iterations, wcet_h * 1000), &func_h);
@@ -42,6 +42,11 @@ int main()
     chrono.stop();
 
     cout << "I'm also done, bye!" << endl;
+
+    delete thread_h;
+    for (auto i = 0; i < n_threads; i++)
+        delete thread_m[i];
+    delete mux;
 
     return 0;
 }

@@ -32,7 +32,7 @@ Semaphore * sem1;
 
 int main()
 {
-    cout << "Testing Reorder..." << endl;
+    cout << "Testando reordenação das listas de pronto..." << endl;
 
     sem1 = new Semaphore(2);
     thread_l1 = new Periodic_Thread(RTConf(period_l * 1000, 0, 0, 0, iterations, wcet_l * 1000), &func_l1);
@@ -49,6 +49,13 @@ int main()
     chrono.stop();
 
     cout << "I'm also done, bye!" << endl;
+
+    delete thread_l0;
+    delete thread_l1;
+    delete thread_h;
+    delete sem1;
+    for (auto i = 0; i < 4; i++)
+        delete thread_m[i];
 
     return 0;
 }
