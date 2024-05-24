@@ -89,6 +89,7 @@ public:
 
     unsigned int queue() const { return 0; }
     void queue(unsigned int q) {}
+    void set_queue(unsigned int q) {}
 
     bool update() { return false; }
 

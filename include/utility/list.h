@@ -1062,6 +1062,7 @@ public:
 
     using Base::empty;
     using Base::size;
+    using Base::size_at;
     using Base::head;
     using Base::tail;
     using Base::begin;
@@ -1179,6 +1180,7 @@ public:
 
     using Base::empty;
     using Base::size;
+    using Base::size_at;
     using Base::head;
     using Base::tail;
     using Base::begin;

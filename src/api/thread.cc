@@ -22,9 +22,11 @@ void Thread::constructor_prologue(unsigned int stack_size)
     _thread_count++;
 
     if (_not_booting && is_same<Criterion, PLLF>::value) {
+        db<Thread>(WRN) << "PLLF" << endl;
         set_scheduler_queue();
         update_priorities(criterion().queue());
     } else {
+        db<Thread>(WRN) << "GLLF" << endl;
         update_priorities();
     }
    
