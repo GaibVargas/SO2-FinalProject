@@ -155,20 +155,16 @@ namespace List_Elements
 
     public:
         Doubly_Linked(const T * o): _object(o), _prev(0), _next(0) {}
-        Doubly_Linked(volatile const T * o): _object(o), _prev(0), _next(0) {}
-
         T * object() const { return const_cast<T *>(_object); }
-        T * object() volatile const { return const_cast<T *>(_object); }
 
         Element * prev() const { return _prev; }
-        Element * prev() volatile const { return _prev; }
         Element * next() const { return _next; }
-        Element * next() volatile const { return _next; }
+
         void prev(Element * e) { _prev = e; }
         void next(Element * e) { _next = e; }
 
     private:
-        volatile const T * _object;
+        const T * _object;
         Element * _prev;
         Element * _next;
     };
@@ -680,23 +676,14 @@ public:
     List(): _size(0), _head(0), _tail(0) {}
 
     bool empty() const { return (_size == 0); }
-    bool empty() volatile const { return (_size == 0); }
     unsigned long size() const { return _size; }
-    unsigned long size() volatile const { return _size; }
-
     Element * head() { return _head; }
-    Element * head() volatile { return _head; }
-
     Element * tail() { return _tail; }
-    Element * tail() volatile { return _tail; }
 
     Iterator begin() { return Iterator(_head); }
-    Iterator begin() volatile { return Iterator(_head); }
     Iterator end() { return Iterator(0); }
-    Iterator end() volatile { return Iterator(0); }
 
     void insert(Element * e) { insert_tail(e); }
-    void insert(Element * e) volatile { insert_tail(e); }
 
     void insert_head(Element * e) {
         db<Lists>(TRC) << "List::insert_head(e=" << e
@@ -746,62 +733,9 @@ public:
         print_tail();
     }
 
-    void insert_tail(Element * e) volatile {
-        db<Lists>(TRC) << "List::insert_tail(e=" << e
-                       << ") => {p=" << (e ? e->prev() : (void *) -1)
-                       << ",o=" << (e ? e->object() : (void *) -1)
-                       << ",n=" << (e ? e->next() : (void *) -1)
-                       << "}" << endl;
-
-        print_head();
-        print_tail();
-
-        if(empty())
-            insert_first(e);
-        else {
-            _tail->next(e);
-            e->prev(_tail);
-            e->next(0);
-            _tail = e;
-            _size++;
-        }
-
-        print_head();
-        print_tail();
-    }
-
     Element * remove() { return remove_head(); }
-    Element * remove() volatile { return remove_head(); }
 
     Element * remove(Element * e) {
-        db<Lists>(TRC) << "List::remove(e=" << e
-                       << ") => {p=" << (e ? e->prev() : (void *) -1)
-                       << ",o=" << (e ? e->object() : (void *) -1)
-                       << ",n=" << (e ? e->next() : (void *) -1)
-                       << "}" << endl;
-
-        print_head();
-        print_tail();
-
-        if(last())
-            remove_last();
-        else if(!e->prev())
-            remove_head();
-        else if(!e->next())
-            remove_tail();
-        else {
-            e->prev()->next(e->next());
-            e->next()->prev(e->prev());
-            _size--;
-        }
-
-        print_head();
-        print_tail();
-
-        return e;
-    }
-
-    volatile Element * remove(volatile Element * e) volatile {
         db<Lists>(TRC) << "List::remove(e=" << e
                        << ") => {p=" << (e ? e->prev() : (void *) -1)
                        << ",o=" << (e ? e->object() : (void *) -1)
@@ -850,49 +784,7 @@ public:
         return e;
     }
 
-    Element * remove_head() volatile {
-        db<Lists>(TRC) << "List::remove_head()" << endl;
-
-        print_head();
-        print_tail();
-
-        if(empty())
-            return 0;
-        if(last())
-            return remove_last();
-        Element * e = _head;
-        _head = _head->next();
-        _head->prev(0);
-        _size--;
-
-        print_head();
-        print_tail();
-
-        return e;
-    }
-
     Element * remove_tail() {
-        db<Lists>(TRC) << "List::remove_tail()" << endl;
-
-        print_head();
-        print_tail();
-
-        if(empty())
-            return 0;
-        if(last())
-            return remove_last();
-        Element * e = _tail;
-        _tail = _tail->prev();
-        _tail->next(0);
-        _size--;
-
-        print_head();
-        print_tail();
-
-        return e;
-    }
-
-    Element * remove_tail() volatile {
         db<Lists>(TRC) << "List::remove_tail()" << endl;
 
         print_head();
@@ -920,20 +812,7 @@ public:
         return 0;
     }
 
-    volatile Element * remove(volatile const Object_Type * obj) volatile {
-        volatile Element * e = search(obj);
-        if(e)
-            return remove(e);
-        return 0;
-    }
-
     Element * search(const Object_Type * obj) {
-        Element * e = _head;
-        for(; e && (e->object() != obj); e = e->next());
-        return e;
-    }
-
-    volatile Element * search(volatile const Object_Type * obj) volatile {
         Element * e = _head;
         for(; e && (e->object() != obj); e = e->next());
         return e;
@@ -941,35 +820,8 @@ public:
 
 protected:
     bool last() const { return (_size == 1); }
-    bool last() volatile const { return (_size == 1); }
 
     void insert(Element * e, Element * p,  Element * n) {
-        db<Lists>(TRC) << "List::insert(e=" << e << ",p=" << p << ",n=" << n
-                       << ") => {p=" << (e ? e->prev() : (void *) -1)
-                       << ",o=" << (e ? e->object() : (void *) -1)
-                       << ",n=" << (e ? e->next() : (void *) -1)
-                       << "},{p=" << (p ? p->prev() : (void *) -1)
-                       << ",o=" << (p ? p->object() : (void *) -1)
-                       << ",n=" << (p ? p->next() : (void *) -1)
-                       << "},{p=" << (n ? n->prev() : (void *) -1)
-                       << ",o=" << (n ? n->object() : (void *) -1)
-                       << ",n=" << (n ? n->next() : (void *) -1)
-                       << "}" << endl;
-
-        print_head();
-        print_tail();
-
-        p->next(e);
-        n->prev(e);
-        e->prev(p);
-        e->next(n);
-        _size++;
-
-        print_head();
-        print_tail();
-    }
-
-    void insert(Element * e, Element * p,  Element * n) volatile {
         db<Lists>(TRC) << "List::insert(e=" << e << ",p=" << p << ",n=" << n
                        << ") => {p=" << (e ? e->prev() : (void *) -1)
                        << ",o=" << (e ? e->object() : (void *) -1)
@@ -1015,44 +867,7 @@ protected:
         print_tail();
     }
 
-    void insert_first(Element * e) volatile {
-        db<Lists>(TRC) << "List::insert_first(e=" << e
-                       << ") => {p=" << (e ? e->prev() : (void *) -1)
-                       << ",o=" << (e ? e->object() : (void *) -1)
-                       << ",n=" << (e ? e->next() : (void *) -1)
-                       << "}" << endl;
-
-        print_head();
-        print_tail();
-
-        e->prev(0);
-        e->next(0);
-        _head = e;
-        _tail = e;
-        _size++;
-
-        print_head();
-        print_tail();
-    }
-
     Element * remove_last() {
-        db<Lists>(TRC) << "List::remove_last()" << endl;
-
-        print_head();
-        print_tail();
-
-        Element * e = _head;
-        _head = 0;
-        _tail = 0;
-        _size--;
-
-        print_head();
-        print_tail();
-
-        return e;
-    }
-
-    Element * remove_last() volatile {
         db<Lists>(TRC) << "List::remove_last()" << endl;
 
         print_head();
@@ -1077,23 +892,7 @@ protected:
                        << "}" << endl;
     }
 
-    void print_head() volatile {
-        db<Lists>(INF) << "List[" << this << "]::head=" << head()
-                       << " => {p=" << (head() ? head()->prev() : (void *) -1)
-                       << ",o=" << (head() ? head()->object() : (void *) -1)
-                       << ",n=" << (head() ? head()->next() : (void *) -1)
-                       << "}" << endl;
-    }
-
     void print_tail() {
-        db<Lists>(INF) << "List[" << this << "]::tail=" << tail()
-                       << " => {p=" << (tail() ? tail()->prev() : (void *) -1)
-                       << ",o=" << (tail() ? tail()->object() : (void *) -1)
-                       << ",n=" << (tail() ? tail()->next() : (void *) -1)
-                       << "}" << endl;
-    }
-
-    void print_tail() volatile {
         db<Lists>(INF) << "List[" << this << "]::tail=" << tail()
                        << " => {p=" << (tail() ? tail()->prev() : (void *) -1)
                        << ",o=" << (tail() ? tail()->object() : (void *) -1)

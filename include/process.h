@@ -146,10 +146,10 @@ protected:
     void insert_synchronizer(Synchronizer_Common *s);
     void remove_synchronizer(Synchronizer_Common *s);
 
-    void insert_synchronizer_running_queue(volatile List<Thread> *q);
-    void remove_synchronizer_running_queue(volatile List<Thread> *q);
-    void insert_synchronizer_modified_queue(volatile List<Thread> *q);
-    void remove_synchronizer_modified_queue(volatile List<Thread> *q);
+    void insert_synchronizer_running_queue(List<Thread> *q);
+    void remove_synchronizer_running_queue(List<Thread> *q);
+    void insert_synchronizer_modified_queue(List<Thread> *q);
+    void remove_synchronizer_modified_queue(List<Thread> *q);
 
 private:
     static void init();

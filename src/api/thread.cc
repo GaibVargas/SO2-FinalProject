@@ -545,22 +545,22 @@ void Thread::remove_synchronizer(Synchronizer_Common *s) {
     delete link;
 }
 
-void Thread::insert_synchronizer_running_queue(volatile List<Thread> *q) {
+void Thread::insert_synchronizer_running_queue(List<Thread> *q) {
     auto link = new Synchronizer_Thread_List_Element(q);
     _synchronizer_running_queue.insert_head(link);
 }
 
-void Thread::remove_synchronizer_running_queue(volatile List<Thread> *q) {
+void Thread::remove_synchronizer_running_queue(List<Thread> *q) {
     auto link = _synchronizer_running_queue.remove(q);
     delete link;
 }
 
-void Thread::insert_synchronizer_modified_queue(volatile List<Thread> *q) {
+void Thread::insert_synchronizer_modified_queue(List<Thread> *q) {
     auto link = new Synchronizer_Thread_List_Element(q);
     _synchronizer_modified_queue.insert_head(link);
 }
 
-void Thread::remove_synchronizer_modified_queue(volatile List<Thread> *q) {
+void Thread::remove_synchronizer_modified_queue(List<Thread> *q) {
     auto link = _synchronizer_modified_queue.remove(q);
     delete link;
 }
