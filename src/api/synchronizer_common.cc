@@ -41,14 +41,22 @@ void Synchronizer_Common::release_synchronyzer(Thread *t) {
     delete link_running;
 
     set_all_next_priority(t);
+
+    for (auto i = 0U; i < Traits<Machine>::CPUS; i++) {
+        if (CPU::id() != i)
+            IC::ipi(i, IC::INT_RESCHEDULER);
+    }
 }
 
 void Synchronizer_Common::pass_priority_to_threads(Thread *t) {
     assert(Thread::locked());
     if (Traits<Thread>::priority_inversion_protocol == Traits<Build>::NOT) return;
 
-    for (auto i = 0U; i < Traits<Machine>::CPUS; i++)
-        Thread::update_priorities(i);
+    if (is_same<Criterion, PLLF>::value)
+        for (auto i = 0U; i < Traits<Machine>::CPUS; i++)
+            Thread::update_priorities(i);
+    else
+        Thread::update_priorities();
 
     // ANNOTATION: sobe a prioridade de todas as threads de prioridade mais baixa dentro do synchronyzer
     for (auto i = _running_queue.begin(); i != _running_queue.end(); i++) {
@@ -63,6 +71,9 @@ void Synchronizer_Common::pass_priority_to_threads(Thread *t) {
             if (prioritize_thread->_state == Thread::READY) {
                 Thread::_scheduler.remove(prioritize_thread);
                 Thread::_scheduler.insert(prioritize_thread);
+            } else if (prioritize_thread->_state == Thread::WAITING) {
+                prioritize_thread->_waiting->remove(prioritize_thread);
+                prioritize_thread->_waiting->insert(&prioritize_thread->_link);
             }
         }
     }
@@ -99,10 +110,6 @@ void Synchronizer_Common::remove_all_lent_priorities() {
         i = next;
     }
 
-    for (auto i = 0U; i < Traits<Machine>::CPUS; i++) {
-        if (CPU::id() != i)
-            IC::ipi(i, IC::INT_RESCHEDULER);
-    }
 }
 
 void Synchronizer_Common::set_all_next_priority(Thread *thread_released)
@@ -111,8 +118,11 @@ void Synchronizer_Common::set_all_next_priority(Thread *thread_released)
 
     if (_modified_threads.size() < 1) return;
 
-    for (auto i = 0U; i < Traits<Machine>::CPUS; i++)
-        Thread::update_priorities(i);
+    if (is_same<Criterion, PLLF>::value)
+        for (auto i = 0U; i < Traits<Machine>::CPUS; i++)
+            Thread::update_priorities(i);
+    else
+        Thread::update_priorities();
 
     // Atualiza a prioridade de todas as threads modificadas por esse sincronizador
     for (auto i = _modified_threads.begin(); i != _modified_threads.end(); i++) {
@@ -182,10 +192,6 @@ void Synchronizer_Common::set_all_next_priority(Thread *thread_released)
             i = i->next();
     }
 
-    for (auto i = 0U; i < Traits<Machine>::CPUS; i++) {
-        if (CPU::id() != i)
-            IC::ipi(i, IC::INT_RESCHEDULER);
-    }
 }
 
 // Seleciona a próxima prioridade da thread no momento em que o sincronizador deixa de existir.

@@ -17,6 +17,7 @@ protected:
     typedef Thread::Queue Queue;
     typedef List<Thread> Thread_List;
     typedef List<Thread>::Element Thread_List_Element;
+    typedef Traits<Thread>::Criterion Criterion;
 
 protected:
     Synchronizer_Common() {}
@@ -40,6 +41,8 @@ protected:
     void wakeup() {
         release_synchronyzer(Thread::running());
         Thread::wakeup(&_queue); 
+        if (Traits<Machine>::CPUS > 1)
+            Thread::call_cpu_reschedule();
     }
     void wakeup_all() { Thread::wakeup_all(&_queue); }
 

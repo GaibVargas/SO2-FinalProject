@@ -21,10 +21,12 @@ void Thread::constructor_prologue(unsigned int stack_size)
 
     _thread_count++;
 
-    if (_not_booting && is_same<Criterion, PLLF>::value) {
+    if (is_same<Criterion, PLLF>::value ) {
         db<Thread>(WRN) << "PLLF" << endl;
-        set_scheduler_queue();
-        update_priorities(criterion().queue());
+        if (_not_booting) {
+            set_scheduler_queue();
+            update_priorities(criterion().queue());
+        }
     } else {
         db<Thread>(WRN) << "GLLF" << endl;
         update_priorities();
@@ -121,6 +123,9 @@ Thread::~Thread()
 void Thread::set_scheduler_queue()
 {
     assert(locked());
+
+    if (!is_same<Criterion, PLLF>::value) return;
+
     unsigned int smaller_queue_index = 0;
     unsigned int smaller_queue_size = _scheduler.schedulables_at(0);
     for (unsigned int i = 1; i < Traits<Machine>::CPUS; i++) {
@@ -310,8 +315,15 @@ void Thread::exit(int status)
         prev->_joining->set_scheduler_queue();
         update_priorities(prev->_joining->criterion().queue());
         _scheduler.resume(prev->_joining);
-        if (prev->_joining->criterion().queue() != CPU::id())
+
+        if (prev->_joining->criterion().queue() != CPU::id() && is_same<Criterion, PLLF>::value)
             call_cpu_reschedule(prev->_joining->criterion().queue());
+        else if (is_same<Criterion, GLLF>::value) {
+            for (auto i = 0U; i < Traits<Machine>::CPUS; i++)
+                if (i != CPU::id())
+                    IC::ipi(i, IC::INT_RESCHEDULER);
+        }
+
         prev->_joining = 0;
     }
 
@@ -357,15 +369,9 @@ void Thread::wakeup(Queue * q)
 
         // Chama reschecule para o própria cpu, caso a thread acordada esteja em outra fila.
         // Especialmente necessário caso a thread que libera o sincronizador esteja com a prioridade modificada.
-        if(preemptive) {
-            if (t->criterion().queue() != CPU::id()) {
-                call_cpu_reschedule(t->criterion().queue());
-                update_priorities();
-                call_cpu_reschedule();
-            } else {
-                call_cpu_reschedule(t->criterion().queue());
-            }
-        }
+        if(preemptive)
+            call_cpu_reschedule(t->criterion().queue());
+
     }
 }
 
@@ -377,9 +383,12 @@ void Thread::wakeup_all(Queue * q)
     assert(locked()); // locking handled by caller
 
     if(!q->empty()) {
-        for (unsigned int i = 0; i < Traits<Machine>::CPUS; i++) {
-            update_priorities(i);
-        }
+        if (is_same<Criterion, PLLF>::value)
+            for (unsigned int i = 0; i < Traits<Machine>::CPUS; i++)
+                update_priorities(i);
+        else
+            update_priorities();
+
         while(!q->empty()) {
             Thread * t = q->remove()->object();
             t->_state = READY;
@@ -406,9 +415,14 @@ void Thread::call_cpu_reschedule(unsigned int cpu)
 
     if (Traits<Machine>::CPUS == 1) return reschedule();
 
-    if (cpu == CPU::id()) return reschedule();
+    if (is_same<Criterion, PLLF>::value) {
+        if (cpu == CPU::id()) return reschedule();
 
-    IC::ipi(cpu, IC::INT_RESCHEDULER);
+        IC::ipi(cpu, IC::INT_RESCHEDULER);
+    }
+    else
+        for (auto i = 0U; i < Traits<Machine>::CPUS; i++)
+            IC::ipi(i, IC::INT_RESCHEDULER);
 
 }
 
@@ -459,7 +473,6 @@ void Thread::update_priorities(unsigned int i)
             t->criterion().update_priority();
         }
     } else {
-        db<Thread>(WRN) << "aaaa" << endl;
         for (auto item = _scheduler.begin(); item != _scheduler.end(); item++) {
             Thread * t = item->object();
             if (t->_link.rank() == IDLE || t->_link.rank() == MAIN) continue;

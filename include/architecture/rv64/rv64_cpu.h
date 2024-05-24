@@ -286,7 +286,6 @@ public:
         return old;
     }
 
-    // ANNOTATION: Colocar um fence no final do cas
     template <typename T>
     static T cas(volatile T & value, T compare, T replacement) {
         register T old;
