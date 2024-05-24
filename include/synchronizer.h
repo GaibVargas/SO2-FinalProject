@@ -55,8 +55,8 @@ protected:
 
 protected:
     Queue _queue;
-    volatile Thread_List _running_queue;
-    volatile Thread_List _modified_threads;
+    Thread_List _running_queue;
+    Thread_List _modified_threads;
 };
 
 

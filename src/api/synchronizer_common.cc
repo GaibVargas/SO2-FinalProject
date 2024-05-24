@@ -164,6 +164,9 @@ void Synchronizer_Common::set_all_next_priority(Thread *thread_released)
         if (t->state() == Thread::READY) {
             t->_scheduler.remove(t);
             t->_scheduler.insert(t);
+        } else if (t->state() == Thread::WAITING) {
+            t->_waiting->remove(t);
+            t->_waiting->insert(&t->_link);
         }
     }
 
@@ -217,6 +220,9 @@ void Synchronizer_Common::set_next_priority(Thread *t) {
         t->_scheduler.remove(t);
         t->update_priorities(t->criterion().queue());
         t->_scheduler.insert(t);
+    } else if (t->state() == Thread::WAITING) {
+        t->_waiting->remove(t);
+        t->_waiting->insert(&t->_link);
     }
     
 }
