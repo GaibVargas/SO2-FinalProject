@@ -13,7 +13,7 @@ __BEGIN_UTIL
 
 // Scheduling_Queue
 template<typename T, typename R = typename T::Criterion>
-class Scheduling_Queue: public Scheduling_Multilist<T> {};
+class Scheduling_Queue: public Scheduling_List<T> {};
 
 
 // Scheduler
@@ -29,7 +29,7 @@ private:
 
 public:
     typedef typename T::Criterion Criterion;
-    typedef Scheduling_Multilist<T, Criterion> Queue;
+    typedef Scheduling_List<T, Criterion> Queue;
     typedef typename Queue::Element Element;
 
 public:

@@ -20,12 +20,14 @@ void Thread::constructor_prologue(unsigned int stack_size)
     lock();
 
     _thread_count++;
-    if (!_not_booting)
-        criterion().set_queue(CPU::id());
-    else
+
+    if (_not_booting && is_same<Criterion, PLLF>::value) {
         set_scheduler_queue();
+        update_priorities(criterion().queue());
+    } else {
+        update_priorities();
+    }
    
-    update_priorities(criterion().queue());
     _scheduler.insert(this);
 
     _stack = new (SYSTEM) char[stack_size];
@@ -448,11 +450,21 @@ void Thread::update_priorities(unsigned int i)
 
     if (!dynamic) return;
 
-    for (auto item = _scheduler.begin(i); item != _scheduler.end(); item++) {
-        Thread * t = item->object();
-        if (t->_link.rank() == IDLE || t->_link.rank() == MAIN) continue;
-        t->criterion().update_priority();
+    if (is_same<Criterion, PLLF>::value) {
+        for (auto item = _scheduler.begin(i); item != _scheduler.end(); item++) {
+            Thread * t = item->object();
+            if (t->_link.rank() == IDLE || t->_link.rank() == MAIN) continue;
+            t->criterion().update_priority();
+        }
+    } else {
+        db<Thread>(WRN) << "aaaa" << endl;
+        for (auto item = _scheduler.begin(); item != _scheduler.end(); item++) {
+            Thread * t = item->object();
+            if (t->_link.rank() == IDLE || t->_link.rank() == MAIN) continue;
+            t->criterion().update_priority();
+        }
     }
+
 }
 
 Thread * volatile Thread::self()

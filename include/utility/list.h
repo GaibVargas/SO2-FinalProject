@@ -677,10 +677,12 @@ public:
 
     bool empty() const { return (_size == 0); }
     unsigned long size() const { return _size; }
+    unsigned long size_at(unsigned int i) const { return size(); }
     Element * head() { return _head; }
     Element * tail() { return _tail; }
 
     Iterator begin() { return Iterator(_head); }
+    Iterator begin(unsigned int queue) { return begin(); }
     Iterator end() { return Iterator(0); }
 
     void insert(Element * e) { insert_tail(e); }
@@ -1066,6 +1068,10 @@ public:
     using Base::end;
 
     Element * volatile & chosen() { return _chosen; }
+    
+    Element * volatile chosen_at(unsigned int cpu) {
+        return _chosen;
+    }
 
     void insert(Element * e) {
         db<Lists>(TRC) << "Scheduling_List::insert(e=" << e

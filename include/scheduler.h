@@ -116,24 +116,24 @@ public:
     Priority(int p = NORMAL, Tn & ... an): _priority(p) {}
 
     operator const volatile int() const volatile { return _priority; }
-    static unsigned int current_head() { return CPU::id(); }
-    static unsigned int current_queue() { return CPU::id(); }
-    const volatile unsigned int & queue() const volatile { return _queue; }
-    void set_queue(unsigned int i) { 
-        if (i < 0 || i > Traits<Machine>::CPUS) {
-            db<Priority>(WRN) << "A fila deve estar entre 0 e " << Traits<Machine>::CPUS - 1 << endl;
-            Machine::panic();
-        }
-        _queue = i; 
-        }
+    // static unsigned int current_head() { return CPU::id(); }
+    // static unsigned int current_queue() { return CPU::id(); }
+    // const volatile unsigned int & queue() const volatile { return _queue; }
+    // void set_queue(unsigned int i) { 
+    //     if (i < 0 || i > Traits<Machine>::CPUS) {
+    //         db<Priority>(WRN) << "A fila deve estar entre 0 e " << Traits<Machine>::CPUS - 1 << endl;
+    //         Machine::panic();
+    //     }
+    //     _queue = i; 
+    //     }
 
 public:
-    static const unsigned int HEADS = Traits<Machine>::CPUS;
-    static const unsigned int QUEUES = Traits<Machine>::CPUS;
+    // static const unsigned int HEADS = Traits<Machine>::CPUS;
+    // static const unsigned int QUEUES = Traits<Machine>::CPUS;
 
 protected:
     volatile int _priority;
-    volatile unsigned int _queue;
+    // volatile unsigned int _queue;
 };
 
 // Round-Robin
@@ -260,6 +260,69 @@ public:
     void update_total_execution_time();
 };
 
+class GLLF: public LLF
+{
+public:
+    GLLF(int p = APERIODIC): LLF(p) {}
+    GLLF(
+        const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY, const Microsecond & expected_execution_time = 0
+    ): LLF(d, p, c, cpu, expected_execution_time) {}
+
+    static unsigned int current_head() { return CPU::id(); }
+
+public:
+    static const unsigned int HEADS = Traits<Machine>::CPUS;
+};
+
+class PLLF: public LLF
+{
+public:
+    PLLF(int p = APERIODIC): LLF(p), _queue(CPU::id()) {}
+    PLLF(
+        const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY, const Microsecond & expected_execution_time = 0
+    ): LLF(d, p, c, cpu, expected_execution_time) {
+        if (cpu != ANY)
+            _queue = cpu;
+        else
+            _queue = CPU::id();
+    }
+
+    static unsigned int current_queue() { return CPU::id(); }
+    const volatile unsigned int & queue() const volatile { return _queue; }
+    void set_queue(unsigned int i) { 
+        if (i < 0 || i > Traits<Machine>::CPUS) {
+            db<Priority>(WRN) << "A fila deve estar entre 0 e " << Traits<Machine>::CPUS - 1 << endl;
+            Machine::panic();
+        }
+        _queue = i; 
+    }
+
+public:
+    static const unsigned int QUEUES = Traits<Machine>::CPUS;
+
+protected:
+    volatile unsigned int _queue;
+};
+
+template<typename T>
+class Scheduling_Queue<T, GLLF>:
+public Multihead_Scheduling_List<T> {};
+
+template<typename T>
+class Scheduling_Queue<T, PLLF>:
+public Scheduling_Multilist<T> {};
+
+template<typename T, typename U>
+struct is_same {
+    static const bool value = false;
+};
+
+template<typename T>
+struct is_same<T, T> {
+    static const bool value = true;
+};
+
 __END_SYS
+
 
 #endif
