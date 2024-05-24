@@ -82,7 +82,7 @@ int func_l0()
         Microsecond elapsed1 = chrono.read() / 1000;
         for(Microsecond end = elapsed1 + for_time, last = end; end > elapsed1; elapsed1 = chrono.read() / 1000)
             if(last != elapsed1) {
-                if (elapsed1%11 == 0)
+                if (elapsed1%3 == 0)
                     cout << "Executing low0 inside sem2 p(l) = " << thread_l0->priority() << endl;
                 last = elapsed1;
             }
@@ -93,7 +93,7 @@ int func_l0()
         Microsecond elapsed2 = chrono.read() / 1000;
         for(Microsecond end = elapsed2 + for_time, last = end; end > elapsed2; elapsed2 = chrono.read() / 1000)
             if(last != elapsed2) {
-                if (elapsed2%7 == 0)
+                if (elapsed2%3 == 0)
                     cout << "Executing low0 inside sem1 p(l) = " << thread_l0->priority() << endl;
                 last = elapsed2;
             }
@@ -123,9 +123,9 @@ int func_l1()
             thread_l2 = new Periodic_Thread(RTConf(period_l * 1000, 0, 0, 0, iterations, wcet_h * 1000), &func_l2);
         }
         Microsecond elapsed1 = chrono.read() / 1000;
-        for(Microsecond end = elapsed1 + for_time, last = end; end > elapsed1; elapsed1 = chrono.read() / 1000)
+        for(Microsecond end = elapsed1 + for_time + 50, last = end; end > elapsed1; elapsed1 = chrono.read() / 1000)
             if(last != elapsed1) {
-                if (elapsed1%3 == 0)
+                if (elapsed1%5 == 0)
                     cout << "Executing low1 inside sem2 p(l) = " << thread_l1->priority() << endl;
                 last = elapsed1;
             }
@@ -136,7 +136,7 @@ int func_l1()
         Microsecond elapsed2 = chrono.read() / 1000;
         for(Microsecond end = elapsed2 + for_time, last = end; end > elapsed2; elapsed2 = chrono.read() / 1000)
             if(last != elapsed2) {
-                if (elapsed2%3 == 0)
+                if (elapsed2%5 == 0)
                     cout << "Executing low1 inside sem1 p(l) = " << thread_l1->priority() << endl;
                 last = elapsed2;
             }
@@ -167,10 +167,12 @@ int func_l2()
         }
 
         Microsecond elapsed1 = chrono.read() / 1000;
-        for(Microsecond end = elapsed1 + for_time, last = end; end > elapsed1; elapsed1 = chrono.read() / 1000) {
-            if (elapsed1%11 == 0)
-                cout << "Executing low2 inside sem2 p(l) = " << thread_l2->priority() << endl;
-            last = elapsed1;
+        for(Microsecond end = elapsed1 + for_time + 80, last = end; end > elapsed1; elapsed1 = chrono.read() / 1000) {
+            if(last != elapsed1) {
+                if (elapsed1%7 == 0)
+                    cout << "Executing low2 inside sem2 p(l) = " << thread_l2->priority() << endl;
+                last = elapsed1;
+            }
         }
 
         cout << "Low2 releases semaphore 2" << endl;
@@ -178,9 +180,11 @@ int func_l2()
 
         Microsecond elapsed2 = chrono.read() / 1000;
         for(Microsecond end = elapsed2 + for_time, last = end; end > elapsed2; elapsed2 = chrono.read() / 1000) {
-            if (elapsed2%11 == 0)
-                cout << "Executing low2 inside sem1 p(l) = " << thread_l2->priority() << endl;
-            last = elapsed2;
+            if(last != elapsed1) {
+                if (elapsed2%7 == 0)
+                    cout << "Executing low2 inside sem1 p(l) = " << thread_l2->priority() << endl;
+                last = elapsed2;
+            }
         }
 
         sem1->v();
@@ -225,7 +229,7 @@ int func_h()
         Microsecond elapsed = chrono.read() / 1000;
         for(Microsecond end = elapsed + for_time, last = end; end > elapsed; elapsed = chrono.read() / 1000)
             if(last != elapsed) {
-                if (elapsed%5 == 0)
+                if (elapsed%11 == 0)
                     cout << "Executing high inside sem2 p(h) = " << thread_h->priority() << endl;
                 last = elapsed;
             }
