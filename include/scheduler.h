@@ -119,7 +119,13 @@ public:
     static unsigned int current_head() { return CPU::id(); }
     static unsigned int current_queue() { return CPU::id(); }
     const volatile unsigned int & queue() const volatile { return _queue; }
-    void set_queue(unsigned int i) { _queue = i; }
+    void set_queue(unsigned int i) { 
+        if (i < 0 || i > Traits<Machine>::CPUS) {
+            db<Priority>(WRN) << "A fila deve estar entre 0 e " << Traits<Machine>::CPUS - 1 << endl;
+            Machine::panic();
+        }
+        _queue = i; 
+        }
 
 public:
     static const unsigned int HEADS = Traits<Machine>::CPUS;
