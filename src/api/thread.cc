@@ -135,18 +135,32 @@ void Thread::priority(const Criterion & c)
     lock();
     db<Thread>(TRC) << "Thread::priority(this=" << this << ",prio=" << c << ")" << endl;
 
-    // ANNOTATION: Se for Finishing, Waiting
+    unsigned int old_cpu = criterion().queue();
+
     if(_state == READY) { // reorder the scheduling queue
         _scheduler.remove(this);
-        _link.rank(c);
+        _link.rank(Criterion(c));
         _scheduler.insert(this);
+    } else if (_state == WAITING) {
+        _waiting->remove(this);
+        _link.rank(Criterion(c));
+        _waiting->insert(&_link);
     } else
-        _link.rank(c);
+        _link.rank(Criterion(c));
 
-    //TODO: Ver a possibilidade de mudar de fila de acordo com o criterion passado
-
-    if(preemptive)
-        call_cpu_reschedule(criterion().queue());
+    if(preemptive) {
+        if (old_cpu == criterion().queue())
+            call_cpu_reschedule(criterion().queue());
+        else {
+            if (old_cpu != CPU::id()) {
+                call_cpu_reschedule(old_cpu);
+                call_cpu_reschedule(criterion().queue());
+            } else {
+                call_cpu_reschedule(criterion().queue());
+                call_cpu_reschedule(old_cpu);
+            }
+        }
+    }
 
     unlock();
 }
