@@ -155,11 +155,11 @@ namespace List_Elements
 
     public:
         Doubly_Linked(const T * o): _object(o), _prev(0), _next(0) {}
-
         T * object() const { return const_cast<T *>(_object); }
 
         Element * prev() const { return _prev; }
         Element * next() const { return _next; }
+
         void prev(Element * e) { _prev = e; }
         void next(Element * e) { _next = e; }
 
@@ -677,11 +677,12 @@ public:
 
     bool empty() const { return (_size == 0); }
     unsigned long size() const { return _size; }
-
+    unsigned long size_at(unsigned int i) const { return size(); }
     Element * head() { return _head; }
     Element * tail() { return _tail; }
 
     Iterator begin() { return Iterator(_head); }
+    Iterator begin(unsigned int queue) { return begin(); }
     Iterator end() { return Iterator(0); }
 
     void insert(Element * e) { insert_tail(e); }
@@ -1061,12 +1062,17 @@ public:
 
     using Base::empty;
     using Base::size;
+    using Base::size_at;
     using Base::head;
     using Base::tail;
     using Base::begin;
     using Base::end;
 
     Element * volatile & chosen() { return _chosen; }
+    
+    Element * volatile chosen_at(unsigned int cpu) {
+        return _chosen;
+    }
 
     void insert(Element * e) {
         db<Lists>(TRC) << "Scheduling_List::insert(e=" << e
@@ -1174,6 +1180,7 @@ public:
 
     using Base::empty;
     using Base::size;
+    using Base::size_at;
     using Base::head;
     using Base::tail;
     using Base::begin;
@@ -1286,6 +1293,7 @@ public:
     bool empty() const { return _list[R::current_queue()].empty(); }
 
     unsigned long size() const { return _list[R::current_queue()].size(); }
+    unsigned long size_at(unsigned int i) const { return _list[i].size(); }
     unsigned long total_size() const {
         unsigned long s = 0;
         for(unsigned int i = 0; i < Q; i++)
@@ -1337,6 +1345,11 @@ public:
         }
 
         return _list[e->rank().queue()].choose(e);
+    }
+
+    Element * volatile chosen_at(unsigned int cpu) {
+        if (cpu < 0 || cpu > Traits<Machine>::CPUS) return nullptr;
+        return _list[cpu].chosen();
     }
 
 private:

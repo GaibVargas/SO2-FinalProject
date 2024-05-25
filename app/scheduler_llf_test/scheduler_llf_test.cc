@@ -5,14 +5,14 @@
 
 using namespace EPOS;
 
-const unsigned int iterations = 1;
+const unsigned int iterations = 4;
 const unsigned int period_a = 60; // ms
-const unsigned int period_b = 80; // ms
+const unsigned int period_b = 65; // ms
 const unsigned int period_c = 100; // ms
 
-const unsigned int wcet_a = 50; // ms
-const unsigned int wcet_b = 70; // ms
-const unsigned int wcet_c = 90; // ms
+const unsigned int wcet_a = 10; // ms
+const unsigned int wcet_b = 30; // ms
+const unsigned int wcet_c = 40; // ms
 
 int func_a();
 int func_b();
@@ -93,6 +93,10 @@ int main()
          << " ms. The measured time was " << chrono.read() / 1000 <<" ms!" << endl;
 
     cout << "I'm also done, bye!" << endl;
+
+    delete thread_a;
+    delete thread_b;
+    delete thread_c;
 
     return 0;
 }

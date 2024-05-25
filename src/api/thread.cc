@@ -20,7 +20,16 @@ void Thread::constructor_prologue(unsigned int stack_size)
     lock();
 
     _thread_count++;
-    update_priorities();
+
+    if (is_same<Criterion, PLLF>::value ) {
+        if (_not_booting) {
+            set_scheduler_queue();
+            update_priorities(criterion().queue());
+        }
+    } else {
+        update_priorities();
+    }
+   
     _scheduler.insert(this);
 
     _stack = new (SYSTEM) char[stack_size];
@@ -43,7 +52,7 @@ void Thread::constructor_epilogue(Log_Addr entry, unsigned int stack_size)
         _scheduler.suspend(this);
 
     if(preemptive && (_state == READY) && (_link.rank() != IDLE)) {
-        call_cpu_reschedule();
+        call_cpu_reschedule(criterion().queue());
     }
 
     unlock();
@@ -109,20 +118,56 @@ Thread::~Thread()
 }
 
 
+void Thread::set_scheduler_queue()
+{
+    assert(locked());
+
+    if (!is_same<Criterion, PLLF>::value) return;
+
+    unsigned int smaller_queue_index = 0;
+    unsigned int smaller_queue_size = _scheduler.schedulables_at(0);
+    for (unsigned int i = 1; i < Traits<Machine>::CPUS; i++) {
+        auto size = _scheduler.schedulables_at(i);
+        if (size < smaller_queue_size) {
+            smaller_queue_index = i;
+            smaller_queue_size = size;
+        }
+    }
+
+    criterion().set_queue(smaller_queue_index);
+}
+
 void Thread::priority(const Criterion & c)
 {
     lock();
     db<Thread>(TRC) << "Thread::priority(this=" << this << ",prio=" << c << ")" << endl;
 
-    if(_state != RUNNING) { // reorder the scheduling queue
-        _scheduler.remove(this);
-        _link.rank(c);
-        _scheduler.insert(this);
-    } else
-        _link.rank(c);
+    unsigned int old_cpu = criterion().queue();
 
-    if(preemptive)
-        reschedule();
+    if(_state == READY) { // reorder the scheduling queue
+        _scheduler.remove(this);
+        _link.rank(Criterion(c));
+        _scheduler.insert(this);
+    } else if (_state == WAITING) {
+        _waiting->remove(this);
+        _link.rank(Criterion(c));
+        _waiting->insert(&_link);
+    } else
+        _link.rank(Criterion(c));
+
+    if(preemptive) {
+        if (old_cpu == criterion().queue())
+            call_cpu_reschedule(criterion().queue());
+        else {
+            if (old_cpu != CPU::id()) {
+                call_cpu_reschedule(old_cpu);
+                call_cpu_reschedule(criterion().queue());
+            } else {
+                call_cpu_reschedule(criterion().queue());
+                call_cpu_reschedule(old_cpu);
+            }
+        }
+    }
 
     unlock();
 }
@@ -142,6 +187,8 @@ int Thread::join()
     if(_state != FINISHING) {
         Thread * prev = running();
         prev->criterion().update_total_execution_time();
+        if (dynamic)
+            prev->criterion().update_priority();
 
         _joining = prev;
         prev->_state = SUSPENDED;
@@ -164,9 +211,20 @@ void Thread::pass()
 
     db<Thread>(TRC) << "Thread::pass(this=" << this << ")" << endl;
 
+    if (_state != READY) {
+        db<Thread>(WRN) << "Thread is not READY" << endl; 
+        unlock();
+        return;
+    }
+
     Thread * prev = running();
     prev->criterion().update_total_execution_time();
-    update_priorities();
+    _scheduler.remove(this);
+    if (dynamic)
+        criterion().update_priority();
+    criterion().set_queue(prev->criterion().queue());
+    update_priorities(criterion().queue());
+    _scheduler.insert(this);
     Thread * next = _scheduler.choose(this);
 
     if(next)
@@ -186,6 +244,8 @@ void Thread::suspend()
 
     Thread * prev = running();
     prev->criterion().update_total_execution_time();
+    if (dynamic)
+        prev->criterion().update_priority();
 
     _state = SUSPENDED;
     _scheduler.suspend(this);
@@ -205,15 +265,16 @@ void Thread::resume()
     db<Thread>(TRC) << "Thread::resume(this=" << this << ")" << endl;
 
     if(_state == SUSPENDED) {
+        _state = READY;
+        set_scheduler_queue();
         if(dynamic) {
             criterion().update_priority();
-            update_priorities();
+            update_priorities(criterion().queue());
         }
-        _state = READY;
         _scheduler.resume(this);
 
         if(preemptive)
-            call_cpu_reschedule();
+            call_cpu_reschedule(criterion().queue());
     } else
         db<Thread>(WRN) << "Resume called for unsuspended object!" << endl;
 
@@ -254,7 +315,18 @@ void Thread::exit(int status)
 
     if(prev->_joining) {
         prev->_joining->_state = READY;
+        prev->_joining->set_scheduler_queue();
+        update_priorities(prev->_joining->criterion().queue());
         _scheduler.resume(prev->_joining);
+
+        if (prev->_joining->criterion().queue() != CPU::id() && is_same<Criterion, PLLF>::value)
+            call_cpu_reschedule(prev->_joining->criterion().queue());
+        else if (is_same<Criterion, GLLF>::value) {
+            for (auto i = 0U; i < Traits<Machine>::CPUS; i++)
+                if (i != CPU::id())
+                    IC::ipi(i, IC::INT_RESCHEDULER);
+        }
+
         prev->_joining = 0;
     }
 
@@ -272,6 +344,8 @@ void Thread::sleep(Queue * q)
 
     Thread * prev = running();
     prev->criterion().update_total_execution_time();
+    if (dynamic)
+        prev->criterion().update_priority();
     _scheduler.suspend(prev);
     prev->_state = WAITING;
     prev->_waiting = q;
@@ -288,17 +362,19 @@ void Thread::wakeup(Queue * q)
     db<Thread>(TRC) << "Thread::wakeup(running=" << running() << ",q=" << q << ")" << endl;
 
     assert(locked()); // locking handled by caller
-    update_priorities();
     if(!q->empty()) {
         Thread * t = q->remove()->object();
         t->_state = READY;
         t->_waiting = 0;
         if(dynamic)
             t->criterion().update_priority();
+        t->set_scheduler_queue();
+        update_priorities(t->criterion().queue());
         _scheduler.resume(t);
 
         if(preemptive)
-            call_cpu_reschedule();
+            call_cpu_reschedule(t->criterion().queue());
+
     }
 }
 
@@ -309,9 +385,13 @@ void Thread::wakeup_all(Queue * q)
 
     assert(locked()); // locking handled by caller
 
-    update_priorities();
-
     if(!q->empty()) {
+        if (is_same<Criterion, PLLF>::value)
+            for (unsigned int i = 0; i < Traits<Machine>::CPUS; i++)
+                update_priorities(i);
+        else
+            update_priorities();
+
         while(!q->empty()) {
             Thread * t = q->remove()->object();
             t->_state = READY;
@@ -320,25 +400,32 @@ void Thread::wakeup_all(Queue * q)
             if (dynamic)
                 t->criterion().update_priority();
 
+            t->set_scheduler_queue();
             _scheduler.resume(t);
         }
 
-        // ANNOTATION: Demais threads acordadas serão escalonadas no Quantum, se necessário
-        if(preemptive)
-            call_cpu_reschedule();
+        if(preemptive) {
+            for (unsigned int i = 0; i < Traits<Machine>::CPUS; i++) {
+                call_cpu_reschedule(i);
+            }
+        }
     }
 }
 
-void Thread::call_cpu_reschedule()
+void Thread::call_cpu_reschedule(unsigned int cpu)
 {
     assert(locked());
 
     if (Traits<Machine>::CPUS == 1) return reschedule();
 
-    auto cpu_id = lower_priority_thread_at_cpu();
-    if (cpu_id == CPU::id()) return reschedule();
+    if (is_same<Criterion, PLLF>::value) {
+        if (cpu == CPU::id()) return reschedule();
 
-    IC::ipi(cpu_id, IC::INT_RESCHEDULER);
+        IC::ipi(cpu, IC::INT_RESCHEDULER);
+    }
+    else
+        for (auto i = 0U; i < Traits<Machine>::CPUS; i++)
+            IC::ipi(i, IC::INT_RESCHEDULER);
 
 }
 
@@ -365,16 +452,16 @@ void Thread::reschedule()
 
     // Atualiza prioridade da thread, e ordena fila de threads para inserção em ordem correta
     prev->criterion().update_total_execution_time();
-    if(dynamic) {
+    if(dynamic)
         prev->criterion().update_priority();
-        update_priorities();
-    }
+
+    update_priorities();
 
     Thread * next = _scheduler.choose(); // insere _chosen anterior na fila
     dispatch(prev, next);
 }
 
-void Thread::update_priorities() 
+void Thread::update_priorities(unsigned int i) 
 {
     db<Thread>(TRC) << "Thread::update_priorities()" << endl;
 
@@ -382,11 +469,20 @@ void Thread::update_priorities()
 
     if (!dynamic) return;
 
-    for (auto item = _scheduler.begin(); item != _scheduler.end(); item++) {
-        Thread * t = item->object();
-        if (t->_link.rank() == IDLE || t->_link.rank() == MAIN) continue;
-        t->criterion().update_priority();
+    if (is_same<Criterion, PLLF>::value) {
+        for (auto item = _scheduler.begin(i); item != _scheduler.end(); item++) {
+            Thread * t = item->object();
+            if (t->_link.rank() == IDLE || t->_link.rank() == MAIN) continue;
+            t->criterion().update_priority();
+        }
+    } else {
+        for (auto item = _scheduler.begin(); item != _scheduler.end(); item++) {
+            Thread * t = item->object();
+            if (t->_link.rank() == IDLE || t->_link.rank() == MAIN) continue;
+            t->criterion().update_priority();
+        }
     }
+
 }
 
 Thread * volatile Thread::self()
@@ -409,13 +505,13 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 
         next->criterion().set_last_started_time(Alarm::elapsed());
 
-        // db<Thread>(TRC) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;
+        db<Thread>(TRC) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;
         if(Traits<Thread>::debugged && Traits<Debug>::info) {
             CPU::Context tmp;
             tmp.save();
-            // db<Thread>(INF) << "Thread::dispatch:prev={" << prev << ",ctx=" << tmp << "}" << endl;
+            db<Thread>(INF) << "Thread::dispatch:prev={" << prev << ",ctx=" << tmp << "}" << endl;
         }
-        // db<Thread>(INF) << "Thread::dispatch:next={" << next << ",ctx=" << *next->_context << "}" << endl;
+        db<Thread>(INF) << "Thread::dispatch:next={" << next << ",ctx=" << *next->_context << "}" << endl;
 
         // The non-volatile pointer to volatile pointer to a non-volatile context is correct
         // and necessary because of context switches, but here, we are locked() and
@@ -465,25 +561,6 @@ int Thread::idle()
     }    
 
     return 0;
-}
-
-unsigned int Thread::lower_priority_thread_at_cpu() {
-    assert(locked());
-
-    Thread * t = _scheduler.chosen_at(0);
-    if (t == nullptr) return 0;
-
-    unsigned int cpu_id = 0;
-    for (unsigned int i = 1; i < Traits<Machine>::CPUS; i++) {
-        Thread * temp_t = _scheduler.chosen_at(i);
-        if (temp_t == nullptr) return i;
-        if (t->priority() < temp_t->priority()) {
-            t = temp_t;
-            cpu_id = i;
-        }
-    }
-
-    return cpu_id;
 }
 
 void Thread::set_borrowed_priority(int p) {

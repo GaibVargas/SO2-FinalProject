@@ -51,6 +51,13 @@ int main()
 
     cout << "I'm also done, bye!" << endl;
 
+    delete thread_l;
+    delete thread_ml;
+    delete thread_m;
+    delete thread_h;
+    delete sem1;
+    delete sem2;
+
     return 0;
 }
 

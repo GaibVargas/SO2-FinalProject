@@ -17,6 +17,7 @@ protected:
     typedef Thread::Queue Queue;
     typedef List<Thread> Thread_List;
     typedef List<Thread>::Element Thread_List_Element;
+    typedef Traits<Thread>::Criterion Criterion;
 
 protected:
     Synchronizer_Common() {}
@@ -40,16 +41,20 @@ protected:
     void wakeup() {
         release_synchronyzer(Thread::running());
         Thread::wakeup(&_queue); 
+        if (Traits<Machine>::CPUS > 1)
+            Thread::call_cpu_reschedule();
     }
     void wakeup_all() { Thread::wakeup_all(&_queue); }
 
     void acquire_synchronyzer(Thread * t);
     void release_synchronyzer(Thread * t);
-    void set_next_priority(Thread * t);
+    void set_next_priority(Thread *t);
+    void set_all_next_priority(Thread *thread_released);
     void pass_priority_to_threads(Thread * t);
     void remove_all_lent_priorities();
     void update_waiting_queue_priorities();
     Thread* get_head_waiting();
+    Thread* get_next_head_waiting();
 
 protected:
     Queue _queue;

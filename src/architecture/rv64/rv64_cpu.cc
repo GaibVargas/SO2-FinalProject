@@ -7,6 +7,7 @@ __BEGIN_SYS
 
 unsigned int CPU::_cpu_clock;
 unsigned int CPU::_bus_clock;
+volatile int CPU::cas_lock = 0;
 
 void CPU::Context::save() volatile
 {

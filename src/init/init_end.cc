@@ -21,7 +21,6 @@ public:
             return;
         }
 
-        // ANNOTATION: Precisa ser feito por todo mundo?
         if(Memory_Map::BOOT_STACK != Memory_Map::NOT_USED && CPU::id() == 0)
             MMU::free(Memory_Map::BOOT_STACK, MMU::pages(Traits<Machine>::STACK_SIZE * Traits<Machine>::CPUS));
         

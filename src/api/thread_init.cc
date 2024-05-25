@@ -51,8 +51,12 @@ void Thread::init()
     CPU::smp_barrier();
 
     // Transition from CPU-based locking to thread-based locking
-    _not_booting = true;
-    Heap::_not_booting = true;
+    if (CPU::id() == 0) {
+        _not_booting = true;
+        Heap::_not_booting = true;
+    }
+
+    CPU::smp_barrier();
 }
 
 __END_SYS
