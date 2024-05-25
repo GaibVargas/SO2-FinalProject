@@ -83,7 +83,7 @@ int func_m()
     for(Microsecond end = elapsed + for_time + 500, last = end; end > elapsed; elapsed = chrono.read() / 1000) {
         if(last != elapsed) {
             if (elapsed%5 == 0)
-                cout << "Executing medium p(l) = " << thread_m->priority() << endl;
+                cout << "Executing medium p(m) = " << thread_m->priority() << endl;
             last = elapsed;
         }
     }
@@ -119,7 +119,7 @@ int func_h()
     for(Microsecond end = elapsed + for_time, last = end; end > elapsed; elapsed = chrono.read() / 1000) {
         if(last != elapsed) {
             if (elapsed%7 == 0)
-                cout << "Executing high p(l) = " << thread_h->priority() << endl;
+                cout << "Executing high p(h) = " << thread_h->priority() << endl;
             last = elapsed;
         }
     }

@@ -220,7 +220,8 @@ void Thread::pass()
     Thread * prev = running();
     prev->criterion().update_total_execution_time();
     _scheduler.remove(this);
-    criterion().update_priority();
+    if (dynamic)
+        criterion().update_priority();
     criterion().set_queue(prev->criterion().queue());
     update_priorities(criterion().queue());
     _scheduler.insert(this);
