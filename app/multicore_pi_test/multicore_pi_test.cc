@@ -36,6 +36,8 @@ Semaphore * sem2;
 int main()
 {
     cout << "Testando PI multicore..." << endl;
+    cout << "Espera-se que quando a thread high tentar adiquirir o semáforo 2 ele seja impedido, e suba a prioridade das threads low." << endl;
+    cout << "Assim que a primeira thread low saia do semáforo 2, as prioridades de todas as thread low devem ser reavaliadas." << endl;
 
     sem1 = new Semaphore(4);
     sem2 = new Semaphore(3);

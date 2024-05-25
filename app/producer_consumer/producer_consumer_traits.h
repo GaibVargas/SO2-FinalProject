@@ -117,7 +117,7 @@ template<> struct Traits<Thread>: public Traits<Build>
     static const bool simulate_capacity = false;
     static const int priority_inversion_protocol = NOT;
 
-    typedef LLF Criterion;
+    typedef IF<(CPUS > 1), GLLF, LLF>::Result Criterion;
     static const unsigned int QUANTUM = 10000; // us
 };
 

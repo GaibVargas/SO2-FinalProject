@@ -22,13 +22,11 @@ void Thread::constructor_prologue(unsigned int stack_size)
     _thread_count++;
 
     if (is_same<Criterion, PLLF>::value ) {
-        db<Thread>(WRN) << "PLLF" << endl;
         if (_not_booting) {
             set_scheduler_queue();
             update_priorities(criterion().queue());
         }
     } else {
-        db<Thread>(WRN) << "GLLF" << endl;
         update_priorities();
     }
    
@@ -367,8 +365,6 @@ void Thread::wakeup(Queue * q)
         update_priorities(t->criterion().queue());
         _scheduler.resume(t);
 
-        // Chama reschecule para o própria cpu, caso a thread acordada esteja em outra fila.
-        // Especialmente necessário caso a thread que libera o sincronizador esteja com a prioridade modificada.
         if(preemptive)
             call_cpu_reschedule(t->criterion().queue());
 

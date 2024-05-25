@@ -31,7 +31,8 @@ Periodic_Thread * thread_h; // low2
 
 int main()
 {
-    cout << "Testando PI multicore..." << endl;
+    cout << "Testando mudança de prioridade no multicore..." << endl;
+    cout << "A thread low vai ter sua prioridade e também sua fila mudada durante várias ocasiões." << endl;
 
     thread_l = new Periodic_Thread(RTConf(period_l * 1000, 0, 0, 0, iterations, wcet_l * 1000), &func_l);
     thread_m = new Periodic_Thread(RTConf(period_m * 1000, 0, 0, 0, iterations, wcet_m * 1000), &func_m);
