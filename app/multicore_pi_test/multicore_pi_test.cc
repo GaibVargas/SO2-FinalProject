@@ -7,13 +7,13 @@ using namespace EPOS;
 
 const unsigned int iterations = 0;
 const unsigned int for_time = 30; // ms
-const unsigned int period_l = 100000; // ms
-const unsigned int period_m = 10000; // ms
+const unsigned int period_l = 1000; // ms
+const unsigned int period_m = 1000; // ms
 const unsigned int period_h = 1000; // ms
 
-const unsigned int wcet_l = 50; // ms
-const unsigned int wcet_m = 50; // ms // ms
-const unsigned int wcet_h = 50; // ms
+const unsigned int wcet_l = 100; // ms
+const unsigned int wcet_m = 300; // ms
+const unsigned int wcet_h = 500; // ms
 
 int func_l0();
 int func_l1();
@@ -79,7 +79,7 @@ int func_l0()
         cout << "Low0 gets semaphore 2" << endl;
         if (!thread_l1) {
             cout << "Create thread Low1" << endl;
-            thread_l1 = new Periodic_Thread(RTConf(period_l * 1000, 0, 0, 0, iterations, wcet_h * 1000), &func_l1);
+            thread_l1 = new Periodic_Thread(RTConf(period_l * 1000, 0, 0, 0, iterations, wcet_l * 1000), &func_l1);
         }
         Microsecond elapsed1 = chrono.read() / 1000;
         for(Microsecond end = elapsed1 + for_time, last = end; end > elapsed1; elapsed1 = chrono.read() / 1000)
@@ -122,7 +122,7 @@ int func_l1()
         cout << "Low1 gets semaphore 2" << endl;
         if (!thread_l2) {
             cout << "Create thread Low2" << endl;
-            thread_l2 = new Periodic_Thread(RTConf(period_l * 1000, 0, 0, 0, iterations, wcet_h * 1000), &func_l2);
+            thread_l2 = new Periodic_Thread(RTConf(period_l * 1000, 0, 0, 0, iterations, wcet_l * 1000), &func_l2);
         }
         Microsecond elapsed1 = chrono.read() / 1000;
         for(Microsecond end = elapsed1 + for_time + 50, last = end; end > elapsed1; elapsed1 = chrono.read() / 1000)
