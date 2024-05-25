@@ -187,6 +187,8 @@ int Thread::join()
     if(_state != FINISHING) {
         Thread * prev = running();
         prev->criterion().update_total_execution_time();
+        if (dynamic)
+            prev->criterion().update_priority();
 
         _joining = prev;
         prev->_state = SUSPENDED;
@@ -241,6 +243,8 @@ void Thread::suspend()
 
     Thread * prev = running();
     prev->criterion().update_total_execution_time();
+    if (dynamic)
+        prev->criterion().update_priority();
 
     _state = SUSPENDED;
     _scheduler.suspend(this);
@@ -339,6 +343,8 @@ void Thread::sleep(Queue * q)
 
     Thread * prev = running();
     prev->criterion().update_total_execution_time();
+    if (dynamic)
+        prev->criterion().update_priority();
     _scheduler.suspend(prev);
     prev->_state = WAITING;
     prev->_waiting = q;
@@ -498,13 +504,13 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 
         next->criterion().set_last_started_time(Alarm::elapsed());
 
-        // db<Thread>(TRC) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;
+        db<Thread>(TRC) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;
         if(Traits<Thread>::debugged && Traits<Debug>::info) {
             CPU::Context tmp;
             tmp.save();
-            // db<Thread>(INF) << "Thread::dispatch:prev={" << prev << ",ctx=" << tmp << "}" << endl;
+            db<Thread>(INF) << "Thread::dispatch:prev={" << prev << ",ctx=" << tmp << "}" << endl;
         }
-        // db<Thread>(INF) << "Thread::dispatch:next={" << next << ",ctx=" << *next->_context << "}" << endl;
+        db<Thread>(INF) << "Thread::dispatch:next={" << next << ",ctx=" << *next->_context << "}" << endl;
 
         // The non-volatile pointer to volatile pointer to a non-volatile context is correct
         // and necessary because of context switches, but here, we are locked() and

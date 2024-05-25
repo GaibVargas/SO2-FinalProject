@@ -117,24 +117,9 @@ public:
     Priority(int p = NORMAL, Tn & ... an): _priority(p) {}
 
     operator const volatile int() const volatile { return _priority; }
-    // static unsigned int current_head() { return CPU::id(); }
-    // static unsigned int current_queue() { return CPU::id(); }
-    // const volatile unsigned int & queue() const volatile { return _queue; }
-    // void set_queue(unsigned int i) { 
-    //     if (i < 0 || i > Traits<Machine>::CPUS) {
-    //         db<Priority>(WRN) << "A fila deve estar entre 0 e " << Traits<Machine>::CPUS - 1 << endl;
-    //         Machine::panic();
-    //     }
-    //     _queue = i; 
-    //     }
-
-public:
-    // static const unsigned int HEADS = Traits<Machine>::CPUS;
-    // static const unsigned int QUEUES = Traits<Machine>::CPUS;
 
 protected:
     volatile int _priority;
-    // volatile unsigned int _queue;
 };
 
 // Round-Robin
