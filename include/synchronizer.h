@@ -41,8 +41,7 @@ protected:
     void wakeup() {
         release_synchronyzer(Thread::running());
         Thread::wakeup(&_queue); 
-        if (Traits<Machine>::CPUS > 1)
-            Thread::call_cpu_reschedule();
+        Thread::call_cpu_reschedule();
     }
     void wakeup_all() { Thread::wakeup_all(&_queue); }
 
